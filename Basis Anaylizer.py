@@ -32,8 +32,6 @@ class Edge:
         self.edgelengthStar = 0
     #10/3/2014: added tetrahedraEdgeIsIn, MELT
     #10/27/14: Vertex class now takes a third argument, length, with default value of one
-    #this is just a test ignore this comment
-    #Now testing the different branches
 
 
     #input: list of Tetrahedron objects
@@ -553,7 +551,7 @@ def makePosDef(target,add = 1):
     return target
 
 def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
-    gamma = 0
+    gamma = 10**-4
     grad = []
     hessian = []
     if(mainMetric.good == False):
@@ -602,8 +600,8 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
         transposeTimesSk = 0
         counter = 0
         for i in range(len(convar)):
-            transposeTimesSk = transposeTimesSk + convar[i]*grad[i]
-        while(temp.LEHR >= mainMetric.LEHR+gamma*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
+            transposeTimesSk = transposeTimesSk + answer[i]*grad[i]
+        while(temp.LEHR >= mainMetric.LEHR+gamma*stepSize*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
             stepSize = stepSize/2
             counter = counter+1
             #if(stepSize < 1/2**14):
