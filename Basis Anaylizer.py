@@ -607,8 +607,7 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
             #if(stepSize < 1/2**14):
             for i in range(len(convar)):
                 #print(stepSize)
-                newConvar[i] = convar[i]
-                newConvar[i] = newConvar[i]+answer[i]*stepSize
+                newConvar[i] = convar[i]+answer[i]*stepSize
             temp = metric(newConvar,background,triagulation)
         #print(mainMetric.LEHR-temp.LEHR)
 
