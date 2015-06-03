@@ -7,7 +7,7 @@ import math
 import random
 import copy
 import numpy
-#THis is just a test
+
 
 class Edge:
     #vertex1: an integer that corresponds with the first part of the name of an edge
