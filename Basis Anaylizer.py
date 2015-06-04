@@ -7,6 +7,8 @@ import math
 import random
 import copy
 import numpy
+from scipy.optimize import minimize
+import scipy
 
 
 class Edge:
