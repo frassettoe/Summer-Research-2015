@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.5.25)  4 JUN 2015 15:40
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.5.25)  4 JUN 2015 15:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -240,21 +240,22 @@ e
 [1{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 (./discrete_yamabe_notes.aux) ) 
 Here is how much of TeX's memory you used:
- 2934 strings out of 493117
- 37599 string characters out of 6135433
+ 2939 strings out of 493117
+ 37659 string characters out of 6135433
  96611 words of memory out of 5000000
- 6210 multiletter control sequences out of 15000+600000
- 7693 words of font info for 30 fonts, out of 8000000 for 9000
+ 6215 multiletter control sequences out of 15000+600000
+ 8747 words of font info for 35 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 37i,5n,28p,278b,193s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,5n,28p,278b,192s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2014/texmf-dist/fonts/type1/
 public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/p
-ublic/amsfonts/cm/cmr7.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr8.pfb>
-Output written on discrete_yamabe_notes.pdf (1 page, 30105 bytes).
+ublic/amsfonts/cm/cmr10.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr7.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr8.pfb>
+Output written on discrete_yamabe_notes.pdf (1 page, 44786 bytes).
 PDF statistics:
- 20 PDF objects out of 1000 (max. 8388607)
- 13 compressed objects within 1 object stream
+ 24 PDF objects out of 1000 (max. 8388607)
+ 16 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
