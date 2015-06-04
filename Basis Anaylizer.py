@@ -1,4 +1,6 @@
 __author__ = 'Owner'
+#CHANGE
+#change2
 
 
 #tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf
@@ -75,6 +77,8 @@ class Edge:
             singleStar = hijk*hijkl+hijl*hijlk
             starList.append(singleStar)
         self.edgelengthStar = .5*sum(starList)
+
+
 
 
 class face:
