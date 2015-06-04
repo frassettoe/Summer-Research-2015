@@ -12,6 +12,7 @@ from scipy.optimize import minimize
 import scipy
 
 
+
 class Edge:
     #vertex1: an integer that corresponds with the first part of the name of an edge
     #vertex2: an integer that corresponds with the second part of the name of an edge
@@ -35,6 +36,7 @@ class Edge:
         self.edgelengthStar = 0
     #10/3/2014: added tetrahedraEdgeIsIn, MELT
     #10/27/14: Vertex class now takes a third argument, length, with default value of one
+    #this is just a test
 
 
     #input: list of Tetrahedron objects
