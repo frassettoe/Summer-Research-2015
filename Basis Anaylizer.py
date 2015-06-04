@@ -1,6 +1,6 @@
 __author__ = 'Owner'
 #mychange
-
+#superdupergoodchange
 
 
 #tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf
@@ -11,6 +11,7 @@ import copy
 import numpy
 from scipy.optimize import minimize
 import scipy
+
 
 
 class Edge:
@@ -36,6 +37,7 @@ class Edge:
         self.edgelengthStar = 0
     #10/3/2014: added tetrahedraEdgeIsIn, MELT
     #10/27/14: Vertex class now takes a third argument, length, with default value of one
+    #this is just a test
 
 
     #input: list of Tetrahedron objects
