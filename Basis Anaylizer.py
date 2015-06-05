@@ -569,7 +569,7 @@ def grad(mainMetric, background, triangulation):
             temp = mainMetric.vertexCurvatureList[i]
             temp = temp-mainMetric.LEHR*.5*mainMetric.sumOfEdgesAtVertex[i]
             temp = temp/mainMetric.totalLength
-            Grad.append(-temp)
+            Grad.append(temp)
     return Grad
 #
 
@@ -593,49 +593,50 @@ def Hess(mainMetric, background, triangulation):
     return hessian
 #
 
-def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
-    gamma = 10**-4
-    if(mainMetric.good == False):
-        return -1
-    else:
-        question = Hess(mainMetric, convar, background)
-        questionTemp = numpy.array(question)
-        newquestion = makePosDef(questionTemp,1)
-        question = newquestion.tolist()
-        #tempQuestion = copy.deepcopy(question)
-        checkPosDef  = numpy.array(question)
-        if(min(numpy.linalg.eigvals(checkPosDef)) <= 0):
-            print("NOT POS DEF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!,")
-            question=makePosDef(newquestion).tolist()
-        #Make hessian pos def
-        gradient = grad(mainMetric, background, triagulation)
-        for i in range(len(gradient)):
-             question[i].append(gradient[i])
-        ToReducedRowEchelonForm(question)
-        answer = [0]*len(gradient)
-        temp = []
-        for i in range(len(gradient)):
-            answer[i] = stepSize*question[i][len(question[i])-1]
-        #while(i != i):
-        newConvar = []
-        for i in range(len(convar)):
-            newConvar.append(convar[i])
-            newConvar[i] = newConvar[i]+answer[i]
-        temp = metric(newConvar, background, triagulation)
-        transposeTimesSk = 0
-        counter = 0
-        for i in range(len(convar)):
-            transposeTimesSk = transposeTimesSk + answer[i]*gradient[i]
-        while(temp.LEHR >= mainMetric.LEHR+gamma*stepSize*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
-            stepSize = stepSize/2
-            counter = counter+1
-            #if(stepSize < 1/2**14):
-            for i in range(len(convar)):
-                #print(stepSize)
-                newConvar[i] = convar[i]+answer[i]*stepSize
-            temp = metric(newConvar,background,triagulation)
-        #print(mainMetric.LEHR-temp.LEHR)
-        return newConvar
+# def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
+#     gamma = 10**-4
+#     if(mainMetric.good == False):
+#         return -1
+#     else:
+#         res = minimize(mainMetric.findLEHR, convar, method)
+#         # question = Hess(mainMetric, convar, background)
+#         # questionTemp = numpy.array(question)
+#         # newquestion = makePosDef(questionTemp,1)
+#         # question = newquestion.tolist()
+#         # #tempQuestion = copy.deepcopy(question)
+#         # checkPosDef  = numpy.array(question)
+#         # if(min(numpy.linalg.eigvals(checkPosDef)) <= 0):
+#         #     print("NOT POS DEF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!,")
+#         #     question=makePosDef(newquestion).tolist()
+#         # #Make hessian pos def
+#         # gradient = grad(mainMetric, background, triagulation)
+#         # for i in range(len(gradient)):
+#         #      question[i].append(gradient[i])
+#         # ToReducedRowEchelonForm(question)
+#         # answer = [0]*len(gradient)
+#         # temp = []
+#         # for i in range(len(gradient)):
+#         #     answer[i] = stepSize*question[i][len(question[i])-1]
+#         # #while(i != i):
+#         # newConvar = []
+#         # for i in range(len(convar)):
+#         #     newConvar.append(convar[i])
+#         #     newConvar[i] = newConvar[i]+answer[i]
+#         # temp = metric(newConvar, background, triagulation)
+#         # transposeTimesSk = 0
+#         # counter = 0
+#         # for i in range(len(convar)):
+#         #     transposeTimesSk = transposeTimesSk + answer[i]*gradient[i]
+#         # while(temp.LEHR >= mainMetric.LEHR+gamma*stepSize*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
+#         #     stepSize = stepSize/2
+#         #     counter = counter+1
+#         #     #if(stepSize < 1/2**14):
+#         #     for i in range(len(convar)):
+#         #         #print(stepSize)
+#         #         newConvar[i] = convar[i]+answer[i]*stepSize
+#         #     temp = metric(newConvar,background,triagulation)
+#         # #print(mainMetric.LEHR-temp.LEHR)
+#         return newConvar
 
 def modifyBackground(c1,c2,filename):
     backgroundMetric = open(filename,"r")
@@ -689,7 +690,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
-            ConformalStep = newtonsMethod(test,conVar,backgroundfile,triangulation)
+            ConformalStep = minimize()
             lastLEHR = test.LEHR
             conVarStore = conVar
             stepSize = 2
