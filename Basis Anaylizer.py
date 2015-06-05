@@ -1,6 +1,7 @@
 __author__ = 'Owner'
 
 
+
 #tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf
 #10/16/14 Michael: Added advancedCheckLegalTetrahedra function for checking legal tetrahedron and used it main, made minor change checkLegalTetrahedron
 import math
@@ -35,7 +36,6 @@ class Edge:
         self.edgelengthStar = 0
     #10/3/2014: added tetrahedraEdgeIsIn, MELT
     #10/27/14: Vertex class now takes a third argument, length, with default value of one
-    #this is just a test
 
 
     #input: list of Tetrahedron objects
@@ -77,6 +77,8 @@ class Edge:
             singleStar = hijk*hijkl+hijl*hijlk
             starList.append(singleStar)
         self.edgelengthStar = .5*sum(starList)
+
+
 
 
 class face:
@@ -529,6 +531,7 @@ def hessianSame(metric,vertex):
     partial = partial - metric.sumOfEdgesAtVertex[vertex-1]*metric.vertexCurvatureList[vertex-1]/(metric.totalLength**2)
     partial = partial + metric.LEHR*metric.sumOfEdgesAtVertex[vertex-1]**2/(2*metric.totalLength**2)
     return partial
+
 def hessianDifferent(metric,vertex1,vertex2):
     if vertex1 > vertex2:
         lijStarOverlij = metric.edgetable[vertex2][vertex1].edgelengthStar/metric.edgetable[vertex2][vertex1].edgelength
@@ -554,31 +557,48 @@ def makePosDef(target,add = 1):
     eigns2=numpy.linalg.eigvals(target)
     return target
 
-def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
-    gamma = 10**-4
-    grad = []
-    hessian = []
-    if(mainMetric.good == False):
-        return -1
-    else:
-        for i in range(mainMetric.vertexNumber):
+
+    #input: metric, background, triangulation
+    #output: gradient
+    #author: Erin, 6/4/2015
+    #change log: none
+def grad(mainMetric, background, triangulation):
+    Grad =[]
+    for i in range(mainMetric.vertexNumber):
             #creating the gradient
             temp = mainMetric.vertexCurvatureList[i]
             temp = temp-mainMetric.LEHR*.5*mainMetric.sumOfEdgesAtVertex[i]
             temp = temp/mainMetric.totalLength
-            grad.append(-temp)
-        for i in range(mainMetric.vertexNumber):
-            #creating the hessian
-            hessian.append([0]*mainMetric.vertexNumber)
-            for j in range(mainMetric.vertexNumber):
-                if mainMetric.edgetable[i+1][j+1] == 0 and mainMetric.edgetable[j+1][i+1] == 0 and i!=j:
-                    if mainMetric.edgetable[i+1][j+1] == 0:
-                        hessian[i][j] = 0
-                elif i == j:
-                    hessian[i][j] = hessianSame(mainMetric,i+1)
-                else:
-                    hessian[i][j] = hessianDifferent(mainMetric,i+1,j+1)
-        question = hessian
+            Grad.append(-temp)
+    return Grad
+#
+
+    #input: metric, background, triangulation
+    #output: Hessian
+    #author: Erin, 6/4/2015
+    #change log: none
+def Hess(mainMetric, background, triangulation):
+    hessian = []
+    for i in range(mainMetric.vertexNumber):
+    #creating the hessian
+        hessian.append([0]*mainMetric.vertexNumber)
+        for j in range(mainMetric.vertexNumber):
+            if mainMetric.edgetable[i+1][j+1] == 0 and mainMetric.edgetable[j+1][i+1] == 0 and i!=j:
+                if mainMetric.edgetable[i+1][j+1] == 0:
+                    hessian[i][j] = 0
+            elif i == j:
+                hessian[i][j] = hessianSame(mainMetric,i+1)
+            else:
+                hessian[i][j] = hessianDifferent(mainMetric,i+1,j+1)
+    return hessian
+#
+
+def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
+    gamma = 10**-4
+    if(mainMetric.good == False):
+        return -1
+    else:
+        question = Hess(mainMetric, convar, background)
         questionTemp = numpy.array(question)
         newquestion = makePosDef(questionTemp,1)
         question = newquestion.tolist()
@@ -588,12 +608,13 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
             print("NOT POS DEF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!,")
             question=makePosDef(newquestion).tolist()
         #Make hessian pos def
-        for i in range(len(grad)):
-             question[i].append(grad[i])
+        gradient = grad(mainMetric, background, triagulation)
+        for i in range(len(gradient)):
+             question[i].append(gradient[i])
         ToReducedRowEchelonForm(question)
-        answer = [0]*len(grad)
+        answer = [0]*len(gradient)
         temp = []
-        for i in range(len(grad)):
+        for i in range(len(gradient)):
             answer[i] = stepSize*question[i][len(question[i])-1]
         #while(i != i):
         newConvar = []
@@ -604,7 +625,7 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
         transposeTimesSk = 0
         counter = 0
         for i in range(len(convar)):
-            transposeTimesSk = transposeTimesSk + answer[i]*grad[i]
+            transposeTimesSk = transposeTimesSk + answer[i]*gradient[i]
         while(temp.LEHR >= mainMetric.LEHR+gamma*stepSize*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
             stepSize = stepSize/2
             counter = counter+1
@@ -614,7 +635,6 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
                 newConvar[i] = convar[i]+answer[i]*stepSize
             temp = metric(newConvar,background,triagulation)
         #print(mainMetric.LEHR-temp.LEHR)
-
         return newConvar
 
 def modifyBackground(c1,c2,filename):
