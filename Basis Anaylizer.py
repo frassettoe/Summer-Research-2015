@@ -690,29 +690,29 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
-            ConformalStep = minimize()
+            ConformalStep = minimize(test.findLEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
             lastLEHR = test.LEHR
             conVarStore = conVar
-            stepSize = 2
+            stepSize = 1
             newConformal = []
             gradPos = True
             conVarStore = conVar
-            for i in range(5000):
-                newConformal = newtonsMethod(test,conVar,backgroundfile,triangulation,1,gradPos)
-                if(newConformal == -1):
-                    working = False
-                    break
-                test = metric(newConformal,backgroundfile,triangulation)
-                ConVarStore = copy.deepcopy(conVar)
-                conVar = newConformal
-                if i%1000 == 0 and i != 0:
-                    print(test.LEHR)
-                    print(i)
-                if test.LCSC == True:
-                    print("Found at step "+str(i))
-                    working = True
-                    foundAt = j
-                    break
+            # for i in range(5000):
+            #     newConformal = minimize(test.findLEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
+            #     if(newConformal == -1):
+            #         working = False
+            #         break
+            #     test = metric(newConformal,backgroundfile,triangulation)
+            #     ConVarStore = copy.deepcopy(conVar)
+            #     conVar = newConformal
+            #     if i%1000 == 0 and i != 0:
+            #         print(test.LEHR)
+            #         print(i)
+            #     if test.LCSC == True:
+            #         print("Found at step "+str(i))
+            #         working = True
+            #         foundAt = j
+            #         break
             if working == True:
                 results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.LCSC,test.LEinstein,foundAt])
                 print("Found at restart "+str(j))
@@ -728,7 +728,7 @@ def main():
    restarts = 1
    LEHRList = []
    numberVertices=4
-   Restarts =25 #number of new sets of conformal variations tested
+   Restarts =1 #number of new sets of conformal variations tested
    numberOfBackgrounds=2
    #seed=4741252
    #seed=263594
