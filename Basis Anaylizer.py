@@ -569,7 +569,7 @@ def grad(mainMetric, background, triangulation):
             temp = mainMetric.vertexCurvatureList[i]
             temp = temp-mainMetric.LEHR*.5*mainMetric.sumOfEdgesAtVertex[i]
             temp = temp/mainMetric.totalLength
-            Grad.append(-temp)
+            Grad.append(temp)
     return Grad
 #
 
