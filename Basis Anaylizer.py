@@ -660,7 +660,7 @@ def modifyBackground(c1,c2,filename):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
     backgroundMetric.close()
 
-def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
+def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 1,numberBackgrounds = 10):
     results = []
     failures = []
     working = True
@@ -690,7 +690,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
-            ConformalStep = minimize(test.findLEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
+            ConformalStep = minimize(test.LEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
             lastLEHR = test.LEHR
             conVarStore = conVar
             stepSize = 1
