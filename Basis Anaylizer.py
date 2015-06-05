@@ -661,11 +661,8 @@ def modifyBackground(c1,c2,filename):
     backgroundMetric.close()
 
 def LEHR(mainMetric):
-    listOfLengths = []
-    listOfCurvatures = []
-    for i in range(len(listOfEdges)):
-        listOfLengths.append(mainMetric.edgetable[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
-        listOfCurvatures.append(mainMetric.edgetable[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
+    listOfLengths = [mainMetric.edgetable[mainMetric.edgeList[i][0]][mainMetric.edgeList[i][1]].edgelength for i in range(len(mainMetric.edgeList))]
+    listOfCurvatures = [mainMetric.edgetable[mainMetric.edgeList[i][0]][mainMetric.edgeList[i][1]].edgecurvature for i in range(len(mainMetric.edgeList)) ]
     return sum(listOfCurvatures)/sum(listOfLengths)
 
 
@@ -699,7 +696,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
-            ConformalStep = minimize(LEHR(test), conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
+            #ConformalStep = minimize(LEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
             lastLEHR = test.LEHR
             conVarStore = conVar
             stepSize = 1
@@ -723,7 +720,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
             #         foundAt = j
             #         break
             if working == True:
-                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.LCSC,test.LEinstein,foundAt])
+                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.LCSC,test.LEinstein])
                 print("Found at restart "+str(j))
                 break
         if working == False:
