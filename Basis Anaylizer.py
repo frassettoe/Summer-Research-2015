@@ -668,6 +668,7 @@ def LEHR(mainMetric):
         listOfCurvatures.append(mainMetric.edgetable[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
     return sum(listOfCurvatures)/sum(listOfLengths)
 
+
 def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
     failures = []
