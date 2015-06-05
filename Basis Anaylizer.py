@@ -577,7 +577,7 @@ def grad(mainMetric, background, triangulation):
     #output: Hessian
     #author: Erin, 6/4/2015
     #change log: none
-def Hess(mainMetric, background, triangulation):
+def Hess(mainMetric):#, background, triangulation):
     hessian = []
     for i in range(mainMetric.vertexNumber):
     #creating the hessian
@@ -662,7 +662,7 @@ def modifyBackground(c1,c2,filename):
 
 def LEHR(mainMetric):
     listOfLengths = [mainMetric.edgetable[mainMetric.edgeList[i][0]][mainMetric.edgeList[i][1]].edgelength for i in range(len(mainMetric.edgeList))]
-    listOfCurvatures = [mainMetric.edgetable[mainMetric.edgeList[i][0]][mainMetric.edgeList[i][1]].edgecurvature for i in range(len(mainMetric.edgeList)) ]
+    listOfCurvatures = [mainMetric.edgetable[mainMetric.edgeList[i][0]][mainMetric.edgeList[i][1]].edgecurvature for i in range(len(mainMetric.edgeList))]
     return sum(listOfCurvatures)/sum(listOfLengths)
 
 
@@ -684,7 +684,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
             happyConVar = False
             while(happyConVar == False):
                 conVar = []
-                modifyBackground(c1,c2, "backgroundMetric.txt")
+                modifyBackground(0,0, "backgroundMetric.txt")
                 for i in range(numberVertices):
                     #sets conformal variations to 0
                     #conVar.append(0)
@@ -696,7 +696,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
-            #ConformalStep = minimize(LEHR, conVar, method='Newton-CG', jac=grad(test, backgroundfile, triangulation), hess=Hess(test, backgroundfile, triangulation), options={'disp': True})
+            ConformalStep = minimize(LEHR, conVar, method='Newton-CG', jac=grad, hess=Hess, options={'disp': True})
             lastLEHR = test.LEHR
             conVarStore = conVar
             stepSize = 1
@@ -744,25 +744,24 @@ def main():
    backgroundfile='backgroundMetric.txt'
    faceInfo = " "
    print("Hello World!\n")
-   random.seed(seed)
    all = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,Restarts,numberOfBackgrounds)
-   notFounds = all[1]
-   store = all[0]
-   for i in range(len(store)):
-       print(store[i])
-   print("\n\n")
-   for i in range(len(notFounds)):
-       (notFounds[i])
-   resultsFile = open("Results.txt","w")
-   for i in range(len(store)):
-       for j in range(len(store[i])):
-            resultsFile.write(str(store[i][j])+ "  ")
-       resultsFile.write("\n")
-   for i in range(len(notFounds)):
-        for j in range(len(notFounds[i])):
-            resultsFile.write(str(notFounds[i][j])+ "  ")
-        resultsFile.write("\n")
-   resultsFile.close()
+   # notFounds = all[1]
+   # store = all[0]
+   # for i in range(len(store)):
+   #     print(store[i])
+   # print("\n\n")
+   # for i in range(len(notFounds)):
+   #     (notFounds[i])
+   # resultsFile = open("Results.txt","w")
+   # for i in range(len(store)):
+   #     for j in range(len(store[i])):
+   #          resultsFile.write(str(store[i][j])+ "  ")
+   #     resultsFile.write("\n")
+   # for i in range(len(notFounds)):
+   #      for j in range(len(notFounds[i])):
+   #          resultsFile.write(str(notFounds[i][j])+ "  ")
+   #      resultsFile.write("\n")
+   # resultsFile.close()
 
 
 main()
