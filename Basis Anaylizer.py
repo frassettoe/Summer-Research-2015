@@ -610,7 +610,7 @@ def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPo
         #Make hessian pos def
         gradient = grad(mainMetric, background, triagulation)
         for i in range(len(gradient)):
-             question[i].append(gradient[i])
+             question[i].append(-gradient[i])
         ToReducedRowEchelonForm(question)
         answer = [0]*len(gradient)
         temp = []
