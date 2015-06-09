@@ -16,7 +16,13 @@ def FaceAngle(convar1, convar2, convar3): #i,j,k
 #input:conformal variations
 #outpu: the dihedral angle
 def DihedralAngle(convar1,convar2,convar3,convar4):
-    diangle = math.acos((math.cos(FaceAngle(convar1,convar3,convar4))-math.cos(FaceAngle(convar1,convar2,convar3))*math.cos(FaceAngle(convar1,convar2,convar4)))/math.sin((FaceAngle(convar1,convar2,convar3))*math.sin(FaceAngle(convar1,convar2,convar4))))
+    diangle = math.acos((math.cos(FaceAngle(convar1,convar3,convar4))-math.cos(FaceAngle(convar1,convar2,convar3))*math.cos(FaceAngle(convar1,convar2,convar4)))/(math.sin((FaceAngle(convar1,convar2,convar3))*math.sin(FaceAngle(convar1,convar2,convar4)))))
+    print(math.cos(FaceAngle(convar1,convar3,convar4)))
+    print(math.cos(FaceAngle(convar1,convar2,convar3)))
+    print(math.cos(FaceAngle(convar1,convar2,convar4)))
+    print(math.sin(FaceAngle(convar1,convar2,convar3)))
+    print(math.sin(FaceAngle(convar1,convar2,convar4)))
+    print(diangle)
     return diangle
 
 print(FaceAngle(.5,.5,.5))
