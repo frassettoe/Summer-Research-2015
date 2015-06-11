@@ -306,7 +306,7 @@ class metric:
                     # If edge is not in the the tableOfEdges, add it
                     if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
                         # Assigns edge its name
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],self.conformalize(conformalVariationList[nameList[counter][0]-1],conformalVariationList[nameList[counter][1]-1],lengthList[counter]))
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[counter])
                         counter = counter+1
                         # Adds tetrahedran to list of tetrahedra edge is in
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
@@ -322,8 +322,8 @@ class metric:
     #Output: Returns the new edge length after the conformal varations have been applied
     #Author: MELT, 10/28/14
     #Change Log:
-    def conformalize(self,vertexAVar,vertexBVar,length):
-        return math.exp(.5*(vertexAVar+vertexBVar))*length
+    #def conformalize(self,vertexAVar,vertexBVar,length):
+        #return math.exp(.5*(vertexAVar+vertexBVar))*length
     #
 
     #input: table of edge objects
@@ -452,13 +452,13 @@ class metric:
     #output: none, super-mega-function that does EVERYTHING! prints LEHR
     #author: METAL, 10/8/2014
     #change log: Michael 10/16/4
-    def __init__(self,conformalVariations, backgroundFile = 'backgroundMetric.txt', manifoldFile = 'manifoldExample.txt'):
+    def __init__(self, backgroundFile = 'backgroundMetric.txt', manifoldFile = 'manifoldExample.txt'):
         self.edgetable = []#A list of lists of edges such that edge x,y is stored in edgetable[x][y]
         self.tetrahedralist = []#A list of tetrahedron objects
         self.edgeList = []#A list of edge names where edgeList[i]=[[a],[b]]
         self.vertexNumber = 0
-        self.LEHR = 10000
-        self.LCSC = False
+        #self.LEHR = 10000
+        #self.LCSC = False
         self.vertexCurvatureList = []
         self.sumOfEdgesAtVertex = []
         readFile = open(manifoldFile)
@@ -475,7 +475,7 @@ class metric:
         tetrahedron = [[int(i) for i in tetrahedron[j]] for j in range(len(tetrahedron))] #turns tetrahedron from str to int
         self.vertexNumber = self.createTetrahedraList(tetrahedron)
         self.createEdgeTable(self.edgetable,self.vertexNumber)
-        self.fillEdgeTable(self.tetrahedralist,self.edgetable,self.edgeList,backgroundFile,conformalVariations)
+        self.fillEdgeTable(self.tetrahedralist,self.edgetable,self.edgeList,backgroundFile)
         self.sumOfEdgesAtVertex = self.getEdgeSums(self.edgetable,self.vertexNumber)
         illegalTetrahedrons = self.advancedCheckLegalTetrahedra(self.tetrahedralist,self.edgetable)
         if illegalTetrahedrons == True:
@@ -491,13 +491,13 @@ class metric:
                 self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeCurvature(self.tetrahedralist)
                 self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeLengthStar(self.tetrahedralist)
             self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)
-            self.LEHR = self.findLEHR(self.edgeList,self.edgetable)
+            #self.LEHR = self.findLEHR(self.edgeList,self.edgetable)
             #self.showEdgeTable(self.edgetable)
             for i in range(self.vertexNumber):
                 self.vertexCurvatureList.append(self.calculateVertexCurvature(i+1,self.edgetable))
-            self.LCSC = self.checkLCSC(self.edgetable)
-            self.LEinstein = self.checkLEinstein()
-            self.good = True
+            #self.LCSC = self.checkLCSC(self.edgetable)
+            #self.LEinstein = self.checkLEinstein()
+            #self.good = True
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
 
 
@@ -707,40 +707,42 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
 
 
 def main():
+   global backgroundmetric
    storage = str(0)+".txt"
    steps = 5000
    restarts = 1
    LEHRList = []
    numberVertices=4
-   Restarts =25 #number of new sets of conformal variations tested
-   numberOfBackgrounds=2
+   #Restarts =25 #number of new sets of conformal variations tested
+   #numberOfBackgrounds=2
    #seed=4741252
    #seed=263594
-   seed=56932684
+   #seed=56932684
    #seed=9865721
    triangulation='manifoldExample3.txt'
    backgroundfile='backgroundMetric.txt'
    faceInfo = " "
    print("Hello World!\n")
-   random.seed(seed)
-   all = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,Restarts,numberOfBackgrounds)
-   notFounds = all[1]
-   store = all[0]
-   for i in range(len(store)):
-       print(store[i])
-   print("\n\n")
-   for i in range(len(notFounds)):
-       (notFounds[i])
-   resultsFile = open("Results.txt","w")
-   for i in range(len(store)):
-       for j in range(len(store[i])):
-            resultsFile.write(str(store[i][j])+ "  ")
-       resultsFile.write("\n")
-   for i in range(len(notFounds)):
-        for j in range(len(notFounds[i])):
-            resultsFile.write(str(notFounds[i][j])+ "  ")
-        resultsFile.write("\n")
-   resultsFile.close()
-
+   backgroundmetric=metric(backgroundfile,triangulation)
+   #random.seed(seed)
+   #all = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,Restarts,numberOfBackgrounds)
+   # notFounds = all[1]
+   # store = all[0]
+   # for i in range(len(store)):
+   #     print(store[i])
+   # print("\n\n")
+   # for i in range(len(notFounds)):
+   #     (notFounds[i])
+   # resultsFile = open("Results.txt","w")
+   # for i in range(len(store)):
+   #     for j in range(len(store[i])):
+   #          resultsFile.write(str(store[i][j])+ "  ")
+   #     resultsFile.write("\n")
+   # for i in range(len(notFounds)):
+   #      for j in range(len(notFounds[i])):
+   #          resultsFile.write(str(notFounds[i][j])+ "  ")
+   #      resultsFile.write("\n")
+   # resultsFile.close()
+   print(backgroundmetric.edgetable)
 
 main()
