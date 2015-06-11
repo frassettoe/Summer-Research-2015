@@ -7,6 +7,9 @@ import numpy
 from scipy.optimize import minimize
 import scipy
 
+#inport global variable background lengths
+#accesss to triangle list and tetrahedralist
+
 #input: coformal variations
 #output: edgelength of edge ij
 def EdgeLength(i,j):
@@ -29,7 +32,7 @@ def DihedralAngleijkl(i,j,k,l):
 #input: conformal variations
 #output: edge curvature of edge ij, in tetrahedra ijkl
 def EdgeCuvature(i,j,k,l):
-    ecurvature = (2*math.pi-DihedralAngleijkl(i,j,k,l))*EdgeLength(i,j)
+    ecurvature = (2*math.pi-DihedralAngleijkl(i,j,k,l))*EdgeLength(i,j) # missing a sum of the dihedral angles, should be the sum of the dihedral angle of that edge in all tetrahedra that edge appears in
     return ecurvature
 
 #input: conformal variations
@@ -50,10 +53,28 @@ def LEHR(i,j,k,l):
     LEHR= (VertexCurvature(i,j,k,l)+VertexCurvature(j,i,k,l)+VertexCurvature(k,i,j,l)+VertexCurvature(l,i,j,k))/TotalEdgeLength(i,j,k,l)
     return LEHR
 
+#inptut: confromal variations
+#output: hij,k which is used in the lij* calculations in the Hessian
+def hijk(i,j,k):
+    hijk= (EdgeLength(i,k)-EdgeLength(i,j)*math.cos(FaceAngleijk(i,j,k)))/(math.sin(FaceAngleijk(i,j,k)))
+    return hijk
+
+#input: conformal variations
+#output: hijk,l which is used in the lij* calculations in the Hessian
+def hijkl(i,j,k,l):
+    hijkl=(hijk(i,j,l)-hijk(i,j,l)*math.cos(DihedralAngleijkl(i,j,k,l)))/(math.sin(DihedralAngleijkl(i,j,k,l)))
+    return hijkl
+
+#input: conformal variations
+#output: lij* which is used in the Hessian
+def lijstar(i,j,k,l):
+    lijstar=.5*(hijk(i,j,k)*hijkl(i,j,k,l)+hijk(i,j,l)*hijkl(i,j,l,k)) # missing a sum of all of the tetrahedra the edge ij is in which goes infromt
+    return lijstar
+
 #input:
 #output:
 def gradient(i,j,k,l):
-    Grad =
+    Grad = Grad
     return Grad
 
 print(EdgeLength(.5,.5))
