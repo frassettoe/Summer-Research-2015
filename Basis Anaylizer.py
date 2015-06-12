@@ -82,9 +82,6 @@ class Edge:
 
 
 class face:
-    def getH(self,leg1,leg2,target):
-        print('Hi')
-
     def getAngle(self,c,a,b):
         temp = a**2+b**2-c**2
         temp = temp/(2*a*b)
@@ -251,19 +248,6 @@ class Tetrahedron:
 
 
 class metric:
-    #input: list of edge names and table of edge objects
-    #output: a number that is LEHR
-    #author: MELT, 10/9/2014
-    #change log:
-    def findLEHR(self,listOfEdges,tableOfEdges):
-        listOfLengths = []
-        listOfCurvatures = []
-        for i in range(len(listOfEdges)):
-            listOfLengths.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
-            listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
-        return sum(listOfCurvatures)/sum(listOfLengths)
-    #
-
     #input: empty table of edges, number of vertices
     #output: none, makes the edge table of proper size, i.e. 15+1
     #author: MELT, 10/3/14
@@ -497,6 +481,19 @@ class metric:
             self.good = True
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
 
+
+#input: list of edge names and table of edge objects
+#output: a number that is LEHR
+#author: MELT, 10/9/2014
+#change log:
+def findLEHR(listOfEdges,tableOfEdges):
+    listOfLengths = []
+    listOfCurvatures = []
+    for i in range(len(listOfEdges)):
+        listOfLengths.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
+        listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
+    return sum(listOfCurvatures)/sum(listOfLengths)
+#
 
 def ToReducedRowEchelonForm( M):
     if not M: return
