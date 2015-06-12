@@ -82,9 +82,6 @@ class Edge:
 
 
 class face:
-    def getH(self,leg1,leg2,target):
-        print('Hi')
-
     def getAngle(self,c,a,b):
         temp = a**2+b**2-c**2
         temp = temp/(2*a*b)
