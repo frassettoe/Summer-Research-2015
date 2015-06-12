@@ -287,7 +287,7 @@ class metric:
                     # If edge is not in the the tableOfEdges, add it
                     if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
                         # Assigns edge its name
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],self.conformalize(conformalVariationList[nameList[counter][0]-1],conformalVariationList[nameList[counter][1]-1],lengthList[counter]))
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[counter])
                         counter = counter+1
                         # Adds tetrahedran to list of tetrahedra edge is in
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
@@ -299,27 +299,20 @@ class metric:
     #Both must be given in order for new function attibutes to be used.  Old use without conformal variations and background metric can still be used.
     #11/18/14: Micahel and Erin removed the ability to not take a background metric and conformal variations.
 
-    #Input: The two vertex conformal varations and the length of the edge in question
-    #Output: Returns the new edge length after the conformal varations have been applied
-    #Author: MELT, 10/28/14
-    #Change Log:
-    def conformalize(self,vertexAVar,vertexBVar,length):
-        return math.exp(.5*(vertexAVar+vertexBVar))*length
-    #
 
-    #input: table of edge objects
-    #output: none, debugging function
-    #author: MELT, 10/7/2014
-    #change log:
-    def showEdgeTable(self,tableOfEdges):
-        count = 0
-        for i in range(len(tableOfEdges)):
-            for j in range(len(tableOfEdges[i])):
-                if tableOfEdges[i][j] != 0:
-                    print(tableOfEdges[i][j].vertex1,tableOfEdges[i][j].vertex2,tableOfEdges[i][j].tetrahedraEdgeIsIn, tableOfEdges[i][j].edgelength)
-                    count = count+1
-        print(count)
-    #
+    # #input: table of edge objects
+    # #output: none, debugging function
+    # #author: MELT, 10/7/2014
+    # #change log:
+    # def showEdgeTable(self,tableOfEdges):
+    #     count = 0
+    #     for i in range(len(tableOfEdges)):
+    #         for j in range(len(tableOfEdges[i])):
+    #             if tableOfEdges[i][j] != 0:
+    #                 print(tableOfEdges[i][j].vertex1,tableOfEdges[i][j].vertex2,tableOfEdges[i][j].tetrahedraEdgeIsIn, tableOfEdges[i][j].edgelength)
+    #                 count = count+1
+    #     print(count)
+    # #
 
     #input: list of tetrahedra names
     #output: number of vertices, builds tetrahedra objects
@@ -355,80 +348,6 @@ class metric:
         return everIllegal
     #
 
-    def findTotalEdgeLength(self,tableOfEdges):
-        L = 0
-        for i in range(1,self.vertexNumber+1):
-            for j in range(len(tableOfEdges[0])):
-                if tableOfEdges[j][i] != 0:
-                    L = L+tableOfEdges[j][i].edgelength
-        return L
-
-    def calculateVertexCurvature(self,vertex,tableOfEdges):
-        vertexCurvature = 0
-        for i in range(len(tableOfEdges[0])):
-            if tableOfEdges[vertex][i] != 0:
-                vertexCurvature = vertexCurvature+tableOfEdges[vertex][i].edgecurvature
-            elif tableOfEdges[i][vertex] != 0:
-                vertexCurvature = vertexCurvature+tableOfEdges[i][vertex].edgecurvature
-        vertexCurvature = vertexCurvature/2
-        return vertexCurvature
-
-
-    def checkLCSC(self,tableOfEdges,error=.0001):
-        LCSC = True
-        listOfLengths = []
-        for i in range(self.vertexNumber+1):
-            listOfLengths.append([0])
-        for i in range(len(self.edgeList)):
-            listOfLengths[self.edgeList[i][0]].append(self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength)
-            listOfLengths[self.edgeList[i][1]].append(self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength)
-       # for i in range(self.vertexNumber):
-       #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
-        for i in range(1,self.vertexNumber+1):
-            if math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * sum(listOfLengths[i])/2)) > (error):
-                #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
-                LCSC = False
-        return LCSC
-
-    def checkLEinstein(self,error=.0001):
-        LEinstein = True
-        for i in range(len(self.edgeList)):
-            curvature=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgecurvature
-            LEHRl=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength
-            LEHRl=LEHRl*self.LEHR
-            if math.fabs(curvature-LEHRl)> error:
-                LEinstein= False
-        return LEinstein
-
-    #inpout: table of edges and number of verticies
-    #output: none, creates a list such that the n-1 item of the list corresponds with the sum of all the edges incident on edge n
-    #Author: EM, 02/04/15
-    #change log:
-
-    def getEdgeSums(self,tableOfEdges,numberOfVertices):
-        edgeSums = []
-        for i in range(1,numberOfVertices+1):
-            sums = 0
-            for j in range(1,numberOfVertices+1):
-                if tableOfEdges[i][j] != 0:
-                    sums = sums + tableOfEdges[i][j].edgelength
-                elif tableOfEdges[j][i] != 0:
-                    sums = sums + tableOfEdges[j][i].edgelength
-            edgeSums.append(sums)
-        return edgeSums
-
-    def getEdgeStarOverEdgeSums(self,tableOfEdges,numberOfVertices):
-        edgeSumsStar = []
-        for i in range(1,numberOfVertices+1):
-            sums = 0
-            for j in range(1,numberOfVertices+1):
-                if tableOfEdges[i][j] != 0:
-                    sums = sums + tableOfEdges[i][j].edgelengthStar/tableOfEdges[i][j].edgelength
-                elif tableOfEdges[j][i] != 0:
-                    sums = sums + tableOfEdges[j][i].edgelengthStar/tableOfEdges[j][i].edgelength
-            edgeSumsStar.append(sums)
-        return edgeSumsStar
-
     #input: none
     #output: none, super-mega-function that does EVERYTHING! prints LEHR
     #author: METAL, 10/8/2014
@@ -438,10 +357,6 @@ class metric:
         self.tetrahedralist = []#A list of tetrahedron objects
         self.edgeList = []#A list of edge names where edgeList[i]=[[a],[b]]
         self.vertexNumber = 0
-        self.LEHR = 10000
-        self.LCSC = False
-        self.vertexCurvatureList = []
-        self.sumOfEdgesAtVertex = []
         readFile = open(manifoldFile)
         data = readFile.read()        #Prepares file for read in
         data = data.split("facets :=") #Look up strip to remove white space
@@ -457,29 +372,30 @@ class metric:
         self.vertexNumber = self.createTetrahedraList(tetrahedron)
         self.createEdgeTable(self.edgetable,self.vertexNumber)
         self.fillEdgeTable(self.tetrahedralist,self.edgetable,self.edgeList,backgroundFile,conformalVariations)
-        self.sumOfEdgesAtVertex = self.getEdgeSums(self.edgetable,self.vertexNumber)
         illegalTetrahedrons = self.advancedCheckLegalTetrahedra(self.tetrahedralist,self.edgetable)
         if illegalTetrahedrons == True:
             self.good = False
         else:
             for i in range(len(self.tetrahedralist)):
                 self.tetrahedralist[i].initalizeTriangles(self.edgetable)
-            self.totalLength = self.findTotalEdgeLength(self.edgetable)
             for i in range(len(self.tetrahedralist)):
                 self.tetrahedralist[i].calculateDihedralAngles(self.edgetable)
                 self.tetrahedralist[i].getTetCenDis()
             for i in range(len(self.edgeList)):
                 self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeCurvature(self.tetrahedralist)
                 self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeLengthStar(self.tetrahedralist)
-            self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)
-            self.LEHR = self.findLEHR(self.edgeList,self.edgetable)
             #self.showEdgeTable(self.edgetable)
-            for i in range(self.vertexNumber):
-                self.vertexCurvatureList.append(self.calculateVertexCurvature(i+1,self.edgetable))
-            self.LCSC = self.checkLCSC(self.edgetable)
-            self.LEinstein = self.checkLEinstein()
             self.good = True
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
+
+
+vertexNumber = 0
+LEHR = 10000
+LCSC = False
+vertexCurvatureList = []
+sumOfEdgesAtVertex = []
+vertexNumber = 4#createTetrahedraList()
+
 
 
 #input: list of edge names and table of edge objects
@@ -494,6 +410,101 @@ def findLEHR(listOfEdges,tableOfEdges):
         listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
     return sum(listOfCurvatures)/sum(listOfLengths)
 #
+
+def findTotalEdgeLength(tableOfEdges):
+        L = 0
+        for i in range(1,self.vertexNumber+1):
+            for j in range(len(tableOfEdges[0])):
+                if tableOfEdges[j][i] != 0:
+                    L = L+tableOfEdges[j][i].edgelength
+        return L
+
+def calculateVertexCurvature(vertex,tableOfEdges):
+    vertexCurvature = 0
+    for i in range(len(tableOfEdges[0])):
+        if tableOfEdges[vertex][i] != 0:
+            vertexCurvature = vertexCurvature+tableOfEdges[vertex][i].edgecurvature
+        elif tableOfEdges[i][vertex] != 0:
+            vertexCurvature = vertexCurvature+tableOfEdges[i][vertex].edgecurvature
+    vertexCurvature = vertexCurvature/2
+    return vertexCurvature
+
+
+def checkLCSC(metric,error=.0001):
+    LCSC = True
+    listOfLengths = []
+    for i in range(vertexNumber+1):
+        listOfLengths.append([0])
+    for i in range(len(edgeList)):
+        listOfLengths[edgeList[i][0]].append(metric.edgetable[edgeList[i][0]][edgeList[i][1]].edgelength)
+        listOfLengths[edgeList[i][1]].append(metric.edgetable[edgeList[i][0]][edgeList[i][1]].edgelength)
+   # for i in range(self.vertexNumber):
+   #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
+    for i in range(1,vertexNumber+1):
+        if math.fabs(calculateVertexCurvature(i,tableOfEdges)-(LEHR * sum(listOfLengths[i])/2)) > (error):
+            #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
+            LCSC = False
+    return LCSC
+
+def checkLEinstein(metric,tableOfEdges,error=.0001):
+    LEinstein = True
+    for i in range(len(edgeList)):
+        curvature=metric.edgetable[edgeList[i][0]][edgeList[i][1]].edgecurvature
+        LEHRl=metric.edgetable[edgeList[i][0]][edgeList[i][1]].edgelength
+        LEHRl=LEHRl*LEHR
+        if math.fabs(curvature-LEHRl)> error:
+            LEinstein= False
+    return LEinstein
+
+
+
+
+#inpout: table of edges and number of verticies
+#output: none, creates a list such that the n-1 item of the list corresponds with the sum of all the edges incident on edge n
+#Author: EM, 02/04/15
+#change log:
+
+def getEdgeSums(tableOfEdges,numberOfVertices):
+    edgeSums = []
+    for i in range(1,numberOfVertices+1):
+        sums = 0
+        for j in range(1,numberOfVertices+1):
+            if tableOfEdges[i][j] != 0:
+                sums = sums + tableOfEdges[i][j].edgelength
+            elif tableOfEdges[j][i] != 0:
+                sums = sums + tableOfEdges[j][i].edgelength
+        edgeSums.append(sums)
+    return edgeSums
+
+def getEdgeStarOverEdgeSums(tableOfEdges,numberOfVertices):
+    edgeSumsStar = []
+    for i in range(1,numberOfVertices+1):
+        sums = 0
+        for j in range(1,numberOfVertices+1):
+            if tableOfEdges[i][j] != 0:
+                sums = sums + tableOfEdges[i][j].edgelengthStar/tableOfEdges[i][j].edgelength
+            elif tableOfEdges[j][i] != 0:
+                sums = sums + tableOfEdges[j][i].edgelengthStar/tableOfEdges[j][i].edgelength
+        edgeSumsStar.append(sums)
+    return edgeSumsStar
+
+def globalvariables(mainmetric):
+    global sumOfEdgesAtVertex
+    sumOfEdgesAtVertex = getEdgeSums(mainmetric.edgetable,vertexNumber)
+    global edgeStarOverEdgeTotal
+    edgeStarOverEdgeTotal = getEdgeStarOverEdgeSums(mainmetric.edgetable,vertexNumber)
+    global LEHR
+    LEHR = findLEHR(mainmetric.edgeList,mainmetric.edgetable)
+    global vertexCurvatureList
+    for i in range(self.vertexNumber):
+        vertexCurvatureList.append(calculateVertexCurvature(i+1,mainmetric.edgetable))
+    global LCSC
+    LCSC = checkLCSC(mainmetric.edgetable)
+    global LEinstein
+    LEinstein = checkLEinstein()
+    global totalLength
+    totalLength = findTotalEdgeLength(mainmetric.edgetable)
+
 
 def ToReducedRowEchelonForm( M):
     if not M: return
@@ -690,6 +701,7 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
                 orignalConVar = []
                 orignalConVar = copy.deepcopy((conVar))
                 test = metric(conVar,backgroundfile,triangulation)
+                print(sumOfEdgesAtVertex)
                 happyConVar = test.good
             if(test.good == False):
                     print("Illegal Initial")
@@ -723,6 +735,8 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
         if working == False:
             failures.append([c1,c2])
     return [results,failures]
+
+
 
 
 def main():
