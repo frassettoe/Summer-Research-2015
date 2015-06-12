@@ -7,13 +7,27 @@ import numpy
 from scipy.optimize import minimize
 import scipy
 
+
 #inport global variable background lengths
 #accesss to triangle list and tetrahedralist
+def DefineGlobalVariables(manifoldFile = 'manifoldExample.txt'):
+    readFile = open(manifoldFile)
+    data = readFile.read()        #Prepares file for read in
+    data = data.split("facets :=") #Look up strip to remove white space
+    data[1] = data[1].strip('[];')
+    data[1] = data[1].split('],[')
+    tetrahedra = []
+    for i in range(0, len(data[1])):   #List comprehensions
+        tetrahedra.append(data[1][i])
+    for i in range(0, len(tetrahedra)):
+        tetrahedra[i] = tetrahedra[i].split(',')
+    readFile.close()
+    tetrahedra = [[int(i) for i in tetrahedra[j]] for j in range(len(tetrahedra))]
 
 #input: coformal variations
 #output: edgelength of edge ij
 def EdgeLength(i,j):
-    edgelength= math.exp(.5*(i+j))
+    edgelength= math.exp(.5*(i+j))#times the background length
     return edgelength
 
 #input: conformal variations
