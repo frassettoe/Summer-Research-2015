@@ -43,7 +43,7 @@ class Edge:
     #author: MELT, 10/14/2014
     #change log: none
     def calculateEdgeCurvature(self,listOfTetrahedra):
-        diList = []
+        diList = []  #empty list of dihedral angles
         for i in range (len(self.tetrahedraEdgeIsIn)):
             tetLocation = self.tetrahedraEdgeIsIn[i]
             # Finds the dihedral angle of edge in tetrahedron at tetrahedraEdgeIsIn[i]
