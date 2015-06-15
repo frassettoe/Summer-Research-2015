@@ -247,7 +247,7 @@ class Tetrahedron:
 
 
 
-class metric:
+class backgroundMetricClass: #need to change so conformal variations are always 0.
     #input: list of edge names and table of edge objects
     #output: a number that is LEHR
     #author: MELT, 10/9/2014
@@ -277,7 +277,7 @@ class metric:
     #output: none, fills the edge table with edge objects and puts the tetrahedron into the list of tetrahedraEdgeIsIn
     #author: MELT, 10/6/2014
     #change log: 11/18/14 ME
-    def fillEdgeTable(self,listOfTetrahedra,tableOfEdges,listOfEdges,fileName = "backgroundMetric.txt",conformalVariationList = "backgroundMetric.txt"):
+    def fillEdgeTable(self,listOfTetrahedra,tableOfEdges,listOfEdges,fileName = "backgroundMetric.txt"):
         #Reads in a background metric file
         backgroundMetric = open(fileName,"r")
         storage = backgroundMetric.readlines()
@@ -300,7 +300,7 @@ class metric:
                     # If edge is not in the the tableOfEdges, add it
                     if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
                         # Assigns edge its name
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],self.conformalize(conformalVariationList[nameList[counter][0]-1],conformalVariationList[nameList[counter][1]-1],lengthList[counter]))
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[counter])
                         counter = counter+1
                         # Adds tetrahedran to list of tetrahedra edge is in
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
@@ -446,7 +446,7 @@ class metric:
     #output: none, super-mega-function that does EVERYTHING! prints LEHR
     #author: METAL, 10/8/2014
     #change log: Michael 10/16/4
-    def __init__(self,conformalVariations, backgroundFile = 'backgroundMetric.txt', manifoldFile = 'manifoldExample.txt'):
+    def __init__(self, backgroundFile = 'backgroundMetric.txt', manifoldFile = 'manifoldExample.txt'):
         self.edgetable = []#A list of lists of edges such that edge x,y is stored in edgetable[x][y]
         self.tetrahedralist = []#A list of tetrahedron objects
         self.edgeList = []#A list of edge names where edgeList[i]=[[a],[b]]
@@ -469,7 +469,7 @@ class metric:
         tetrahedron = [[int(i) for i in tetrahedron[j]] for j in range(len(tetrahedron))] #turns tetrahedron from str to int
         self.vertexNumber = self.createTetrahedraList(tetrahedron)
         self.createEdgeTable(self.edgetable,self.vertexNumber)
-        self.fillEdgeTable(self.tetrahedralist,self.edgetable,self.edgeList,backgroundFile,conformalVariations)
+        self.fillEdgeTable(self.tetrahedralist,self.edgetable,self.edgeList,backgroundFile)
         self.sumOfEdgesAtVertex = self.getEdgeSums(self.edgetable,self.vertexNumber)
         illegalTetrahedrons = self.advancedCheckLegalTetrahedra(self.tetrahedralist,self.edgetable)
         if illegalTetrahedrons == True:
@@ -493,6 +493,12 @@ class metric:
             self.LEinstein = self.checkLEinstein()
             self.good = True
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
+
+class metric:
+    def calLEHR(self,convar):
+
+    def __init__(self,backgroundFile,triagulation):
+        background = backgroundMetricClass(backgroundFile,triagulation)
 
 
 def ToReducedRowEchelonForm( M):
@@ -588,134 +594,7 @@ def Hess(mainMetric, background, triangulation):
             else:
                 hessian[i][j] = hessianDifferent(mainMetric,i+1,j+1)
     return hessian
-#
 
-def newtonsMethod(mainMetric,convar ,background,triagulation,stepSize = 1,gradPos = True,numberCalls = 0):
-    gamma = 10**-4
-    if(mainMetric.good == False):
-        return -1
-    else:
-        question = Hess(mainMetric, convar, background)
-        questionTemp = numpy.array(question)
-        newquestion = makePosDef(questionTemp,1)
-        question = newquestion.tolist()
-        #tempQuestion = copy.deepcopy(question)
-        checkPosDef  = numpy.array(question)
-        if(min(numpy.linalg.eigvals(checkPosDef)) <= 0):
-            print("NOT POS DEF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!,")
-            question=makePosDef(newquestion).tolist()
-        #Make hessian pos def
-        gradient = grad(mainMetric, background, triagulation)
-        for i in range(len(gradient)):
-             question[i].append(-gradient[i])
-        ToReducedRowEchelonForm(question)
-        answer = [0]*len(gradient)
-        temp = []
-        for i in range(len(gradient)):
-            answer[i] = stepSize*question[i][len(question[i])-1]
-        #while(i != i):
-        newConvar = []
-        for i in range(len(convar)):
-            newConvar.append(convar[i])
-            newConvar[i] = newConvar[i]+answer[i]
-        temp = metric(newConvar, background, triagulation)
-        transposeTimesSk = 0
-        counter = 0
-        for i in range(len(convar)):
-            transposeTimesSk = transposeTimesSk + answer[i]*gradient[i]
-        while(temp.LEHR >= mainMetric.LEHR+gamma*stepSize*transposeTimesSk and stepSize > 1/2**10 and temp.LCSC == False):
-            stepSize = stepSize/2
-            counter = counter+1
-            #if(stepSize < 1/2**14):
-            for i in range(len(convar)):
-                #print(stepSize)
-                newConvar[i] = convar[i]+answer[i]*stepSize
-            temp = metric(newConvar,background,triagulation)
-        #print(mainMetric.LEHR-temp.LEHR)
-        return newConvar
-
-def modifyBackground(c1,c2,filename):
-    backgroundMetric = open(filename,"r")
-    storage = backgroundMetric.readlines()
-    nameList = []
-    lengthList = []
-    i = 0
-    while(i < len(storage)-1):
-        #breaks background metric into a names and lengths, such that name at position i corresponds to length and position i
-        nameList.append(storage[i])
-        lengthList.append(float(storage[i+1]))
-        i = i+2
-    # makes files usable
-    for i in range(len(nameList)):
-        nameList[i] = nameList[i].split(",")
-        nameList[i][0] = int(nameList[i][0])
-        nameList[i][1] = int(nameList[i][1])
-    lengthList = [(math.exp(c1))**.5,(math.exp(c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(c2))**.5,(math.exp(c1))**.5]
-    backgroundMetric = open(filename,"w")
-    for i in range(len(nameList)):
-        backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
-    backgroundMetric.close()
-
-def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
-    results = []
-    failures = []
-    working = True
-    results.append(["c1","c2","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","Conformal Variations"])
-    for k in range(numberBackgrounds):
-        c1 = random.random()*10-5
-        c2 = random.random()*10-5
-        print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
-            c1 = random.random()*10-5
-            c2 = random.random()*10-5
-        for j in range(restarts):
-            working = True
-            happyConVar = False
-            while(happyConVar == False):
-                conVar = []
-                modifyBackground(c1,c2, "backgroundMetric.txt")
-                for i in range(numberVertices):
-                    #sets conformal variations to 0
-                    #conVar.append(0)
-                    #sets random conformal variations
-                    conVar.append(random.random())
-                orignalConVar = []
-                orignalConVar = copy.deepcopy((conVar))
-                test = metric(conVar,backgroundfile,triangulation)
-                happyConVar = test.good
-            if(test.good == False):
-                    print("Illegal Initial")
-            ConformalStep = newtonsMethod(test,conVar,backgroundfile,triangulation)
-            lastLEHR = test.LEHR
-            conVarStore = conVar
-            stepSize = 2
-            newConformal = []
-            gradPos = True
-            conVarStore = conVar
-            for i in range(5000):
-                newConformal = newtonsMethod(test,conVar,backgroundfile,triangulation,1,gradPos)
-                if(newConformal == -1):
-                    working = False
-                    break
-                test = metric(newConformal,backgroundfile,triangulation)
-                ConVarStore = copy.deepcopy(conVar)
-                conVar = newConformal
-                if i%1000 == 0 and i != 0:
-                    print(test.LEHR)
-                    print(i)
-                if test.LCSC == True:
-                    print("Found at step "+str(i))
-                    working = True
-                    foundAt = j
-                    break
-            if working == True:
-                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.LCSC,test.LEinstein,foundAt])
-                print("Found at restart "+str(j))
-                break
-        if working == False:
-            failures.append([c1,c2])
-    return [results,failures]
 
 
 def main():
@@ -735,24 +614,9 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
    random.seed(seed)
-   all = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,Restarts,numberOfBackgrounds)
-   notFounds = all[1]
-   store = all[0]
-   for i in range(len(store)):
-       print(store[i])
-   print("\n\n")
-   for i in range(len(notFounds)):
-       (notFounds[i])
-   resultsFile = open("Results.txt","w")
-   for i in range(len(store)):
-       for j in range(len(store[i])):
-            resultsFile.write(str(store[i][j])+ "  ")
-       resultsFile.write("\n")
-   for i in range(len(notFounds)):
-        for j in range(len(notFounds[i])):
-            resultsFile.write(str(notFounds[i][j])+ "  ")
-        resultsFile.write("\n")
-   resultsFile.close()
+   test = backgroundMetricClass('backgroundMetric.txt','manifoldExample3.txt')
+   print(test.LEHR)
+
 
 
 main()
