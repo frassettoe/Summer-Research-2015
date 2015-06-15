@@ -23,6 +23,7 @@ class testDevice:
 
     def opt(self):
         res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
+        print(res.x)
         return res
 
     def __init__(self):
