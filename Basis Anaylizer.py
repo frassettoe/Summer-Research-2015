@@ -2,7 +2,7 @@ __author__ = 'Owner'
 
 
 
-#tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf
+#tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf  This is Michael's First change!
 #10/16/14 Michael: Added advancedCheckLegalTetrahedra function for checking legal tetrahedron and used it main, made minor change checkLegalTetrahedron
 import math
 import random
