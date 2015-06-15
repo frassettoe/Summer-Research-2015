@@ -497,6 +497,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
 class metric:
     def calLEHR(self,convar):
+        self.vertexCurvatureList = []
         edgeList = copy.deepcopy(self.background.edgeList)
         edgeTable = self.setEdgeLengths(convar)
         tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
@@ -504,9 +505,26 @@ class metric:
             tetrahedraList[i].calculateDihedralAngles(edgeTable)
         for i in range(len(edgeList)):
             edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+        for i in range(1,self.background.vertexNumber+1):
+            self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
         result = self.findLEHR(edgeList,edgeTable)
 
         return result
+
+    def optimizeLEHR(self,convar):
+        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
+        #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
+        return res
+
+    def grad(self,convar):
+        Grad = []
+        for i in range(self.background.vertexNumber):
+                #creating the gradient
+                temp = self.vertexCurvatureList[i]
+                temp = temp-self.LEHR*.5*self.sumOfEdgesAtVertexList[i]
+                temp = temp/self.totalEdgeLength
+                Grad.append(temp)
+        return numpy.array(Grad)
 
     def findLEHR(self,listOfEdges,tableOfEdges):
             listOfLengths = []
@@ -516,18 +534,33 @@ class metric:
                 listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
             return sum(listOfCurvatures)/sum(listOfLengths)
 
+    def calculateVertexCurvature(self,vertex,tableOfEdges):
+        vertexCurvature = 0
+        for i in range(len(tableOfEdges[0])):
+            if tableOfEdges[vertex][i] != 0:
+                vertexCurvature = vertexCurvature+tableOfEdges[vertex][i].edgecurvature
+            elif tableOfEdges[i][vertex] != 0:
+                vertexCurvature = vertexCurvature+tableOfEdges[i][vertex].edgecurvature
+        vertexCurvature = vertexCurvature/2
+        return vertexCurvature
+
     def setEdgeLengths(self,convar):
         edgeLengthTable = copy.deepcopy(self.background.edgetable)
         for i in range(len(edgeLengthTable)):
             for j in range(len(edgeLengthTable[i])):
                 if(edgeLengthTable[i][j]!=0):
                     edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*edgeLengthTable[i][j].edgelength
-                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength
+                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength/2
+                    self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+edgeLengthTable[i][j].edgelength/2
+                    self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength/2
         return edgeLengthTable
 
-    def __init__(self,backgroundFile,triagulation):
+    def __init__(self,backgroundFile,triagulation,convar):
         self.background = backgroundMetricClass(backgroundFile,triagulation)
         self.totalEdgeLength = 0
+        self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
+        self.vertexCurvatureList = [0]
+        self.LEHR = self.calLEHR(convar)
 
 
 def ToReducedRowEchelonForm( M):
@@ -643,10 +676,12 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
    random.seed(seed)
-   test = metric('backgroundMetric.txt','manifoldExample3.txt')
-   #convar = numpy.array([1,2,1.5,1])
+   #convar = numpy.array([0,0,0,0])
    convar = numpy.array([1,.5,1.5,1])
+   test = metric('backgroundMetric.txt','manifoldExample3.txt',convar)
    print(test.calLEHR(convar))
+   print(test.grad(0))
+   test.optimizeLEHR(convar)
 
 
 
