@@ -508,12 +508,32 @@ class metric:
         for i in range(1,self.background.vertexNumber+1):
             self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
         result = self.findLEHR(edgeList,edgeTable)
+        self.LEHR = result
+        self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+
 
         return result
+
+    def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
+            LCSC = True
+            listOfLengths = []
+            for i in range(self.background.vertexNumber+1):
+                listOfLengths.append([0])
+            for i in range(len(self.background.edgeList)):
+                listOfLengths[edgeList[i][0]].append(tableOfEdges[edgeList[i][0]][edgeList[i][1]].edgelength)
+                listOfLengths[edgeList[i][1]].append(tableOfEdges[edgeList[i][0]][edgeList[i][1]].edgelength)
+           # for i in range(self.vertexNumber):
+           #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
+            for i in range(1,self.background.vertexNumber+1):
+                if math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * sum(listOfLengths[i])/2)) > (error):
+                    #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
+                    LCSC = False
+            return LCSC
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
+        self.minima = res.x
         return res
 
     def grad(self,convar):
@@ -560,7 +580,9 @@ class metric:
         self.totalEdgeLength = 0
         self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         self.vertexCurvatureList = [0]
+        self.isLCSC = False
         self.LEHR = self.calLEHR(convar)
+        self.minima = []
 
 
 def ToReducedRowEchelonForm( M):
@@ -676,12 +698,15 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
    random.seed(seed)
-   #convar = numpy.array([0,0,0,0])
-   convar = numpy.array([1,.5,1.5,1])
+   convar = numpy.array([random.random(),random.random(),random.random(),random.random()])
+   #convar = numpy.array([1,0,0,0])
+   #convar = numpy.array([1,.5,1.5,1])
    test = metric('backgroundMetric.txt','manifoldExample3.txt',convar)
    print(test.calLEHR(convar))
    print(test.grad(0))
    test.optimizeLEHR(convar)
+   print(test.minima)
+   print(test.isLCSC)
 
 
 
