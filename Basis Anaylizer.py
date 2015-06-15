@@ -501,16 +501,19 @@ class metric:
         edgeList = copy.deepcopy(self.background.edgeList)
         edgeTable = self.setEdgeLengths(convar)
         tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
-        for i in range(len(tetrahedraList)):
-            tetrahedraList[i].calculateDihedralAngles(edgeTable)
-        for i in range(len(edgeList)):
-            edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
-        for i in range(1,self.background.vertexNumber+1):
-            self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
-        result = self.findLEHR(edgeList,edgeTable)
-        self.LEHR = result
-        self.isLCSC = self.checkLCSC(edgeTable,edgeList)
-
+        self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+        if self.good == True:
+            for i in range(len(tetrahedraList)):
+                tetrahedraList[i].calculateDihedralAngles(edgeTable)
+            for i in range(len(edgeList)):
+                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+            for i in range(1,self.background.vertexNumber+1):
+                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
+            result = self.findLEHR(edgeList,edgeTable)
+            self.LEHR = result
+            self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+        else:
+            result = 1000
 
         return result
 
@@ -531,13 +534,15 @@ class metric:
             return LCSC
 
     def optimizeLEHR(self,convar):
-        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
+        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
+        #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
         return res
 
     def grad(self,convar):
         Grad = []
+        self.calLEHR(convar)
         for i in range(self.background.vertexNumber):
                 #creating the gradient
                 temp = self.vertexCurvatureList[i]
@@ -545,6 +550,17 @@ class metric:
                 temp = temp/self.totalEdgeLength
                 Grad.append(temp)
         return numpy.array(Grad)
+
+    #true if there exists an illegal tetrahedron
+    def advancedCheckLegalTetrahedra(self,listOfTetrahedra,tableOfEdges):
+            #legal = True
+            everIllegal = False
+            for i in range(len(listOfTetrahedra)):
+                legal = listOfTetrahedra[i].checkLegalTetrahedron(tableOfEdges)
+                if legal == False:
+                    #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
+                    everIllegal = True
+            return everIllegal
 
     def findLEHR(self,listOfEdges,tableOfEdges):
             listOfLengths = []
@@ -581,6 +597,7 @@ class metric:
         self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         self.vertexCurvatureList = [0]
         self.isLCSC = False
+        self.good = True
         self.LEHR = self.calLEHR(convar)
         self.minima = []
 
@@ -680,34 +697,87 @@ def Hess(mainMetric, background, triangulation):
     return hessian
 
 
+def modifyBackground(c1,c2,filename):
+    backgroundMetric = open(filename,"r")
+    storage = backgroundMetric.readlines()
+    nameList = []
+    lengthList = []
+    i = 0
+    while(i < len(storage)-1):
+        #breaks background metric into a names and lengths, such that name at position i corresponds to length and position i
+        nameList.append(storage[i])
+        lengthList.append(float(storage[i+1]))
+        i = i+2
+    # makes files usable
+    for i in range(len(nameList)):
+        nameList[i] = nameList[i].split(",")
+        nameList[i][0] = int(nameList[i][0])
+        nameList[i][1] = int(nameList[i][1])
+    lengthList = [(math.exp(c1))**.5,(math.exp(c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(c2))**.5,(math.exp(c1))**.5]
+    backgroundMetric = open(filename,"w")
+    for i in range(len(nameList)):
+        backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
+    backgroundMetric.close()
+
+def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
+    results = []
+    failures = []
+    working = True
+    results.append(["c1","c2","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
+    failures.append(["c1","c2","Conformal Variations"])
+    for k in range(numberBackgrounds):
+        c1 = random.random()*10-5
+        c2 = random.random()*10-5
+        print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
+        while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
+            c1 = random.random()*10-5
+            c2 = random.random()*10-5
+        for j in range(restarts):
+            working = True
+            happyConVar = False
+            while(happyConVar == False):
+                conVar = []
+                modifyBackground(c1,c2, "backgroundMetric.txt")
+                for i in range(numberVertices):
+                    #sets conformal variations to 0
+                    #conVar.append(0)
+                    #sets random conformal variations
+                    conVar.append(random.random())
+                orignalConVar = []
+                orignalConVar = copy.deepcopy((conVar))
+                test = metric(backgroundfile,triangulation,conVar)
+                happyConVar = test.good
+            temp = test.optimizeLEHR(conVar)
+            conVar = temp.x
+            working = test.isLCSC
+            if working == True:
+                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                break
+        if working == False:
+            failures.append([c1,c2])
+    return [results,failures]
 
 def main():
    storage = str(0)+".txt"
-   steps = 5000
-   restarts = 1
    LEHRList = []
    numberVertices=4
-   Restarts =25 #number of new sets of conformal variations tested
-   numberOfBackgrounds=2
+   numberOfBackgrounds=20
+   numberRestarts = 100
    #seed=4741252
    #seed=263594
    seed=56932684
+   random.seed(seed)
    #seed=9865721
    triangulation='manifoldExample3.txt'
    backgroundfile='backgroundMetric.txt'
    faceInfo = " "
    print("Hello World!\n")
-   random.seed(seed)
-   convar = numpy.array([random.random(),random.random(),random.random(),random.random()])
-   #convar = numpy.array([1,0,0,0])
-   #convar = numpy.array([1,.5,1.5,1])
-   test = metric('backgroundMetric.txt','manifoldExample3.txt',convar)
-   print(test.calLEHR(convar))
-   print(test.grad(0))
-   test.optimizeLEHR(convar)
-   print(test.minima)
-   print(test.isLCSC)
 
+   results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+   for i in range(len(results[0])):
+       print(results[0][i])
+   for i in range(len(results[1])):
+       print(results[1][i])
 
 
 main()
