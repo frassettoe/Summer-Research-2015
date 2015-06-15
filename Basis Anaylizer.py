@@ -225,6 +225,7 @@ class Tetrahedron:
     #author: MELT, 10/9/2014
     #change log:
     def calculateDihedralAngles(self,tableOfEdges):
+        self.dihedralanglelist = []
         edge12=tableOfEdges[self.vertex1][self.vertex2].edgelength
         edge13=tableOfEdges[self.vertex1][self.vertex3].edgelength
         edge14=tableOfEdges[self.vertex1][self.vertex4].edgelength
@@ -496,9 +497,37 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
 class metric:
     def calLEHR(self,convar):
+        edgeList = copy.deepcopy(self.background.edgeList)
+        edgeTable = self.setEdgeLengths(convar)
+        tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
+        for i in range(len(tetrahedraList)):
+            tetrahedraList[i].calculateDihedralAngles(edgeTable)
+        for i in range(len(edgeList)):
+            edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+        result = self.findLEHR(edgeList,edgeTable)
+
+        return result
+
+    def findLEHR(self,listOfEdges,tableOfEdges):
+            listOfLengths = []
+            listOfCurvatures = []
+            for i in range(len(listOfEdges)):
+                listOfLengths.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
+                listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
+            return sum(listOfCurvatures)/sum(listOfLengths)
+
+    def setEdgeLengths(self,convar):
+        edgeLengthTable = copy.deepcopy(self.background.edgetable)
+        for i in range(len(edgeLengthTable)):
+            for j in range(len(edgeLengthTable[i])):
+                if(edgeLengthTable[i][j]!=0):
+                    edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*edgeLengthTable[i][j].edgelength
+                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength
+        return edgeLengthTable
 
     def __init__(self,backgroundFile,triagulation):
-        background = backgroundMetricClass(backgroundFile,triagulation)
+        self.background = backgroundMetricClass(backgroundFile,triagulation)
+        self.totalEdgeLength = 0
 
 
 def ToReducedRowEchelonForm( M):
@@ -614,8 +643,10 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
    random.seed(seed)
-   test = backgroundMetricClass('backgroundMetric.txt','manifoldExample3.txt')
-   print(test.LEHR)
+   test = metric('backgroundMetric.txt','manifoldExample3.txt')
+   #convar = numpy.array([1,2,1.5,1])
+   convar = numpy.array([1,.5,1.5,1])
+   print(test.calLEHR(convar))
 
 
 
