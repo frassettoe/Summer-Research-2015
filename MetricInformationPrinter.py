@@ -1,3 +1,4 @@
+__author__ = 'Michael'
 __author__ = 'Owner'
 
 
@@ -10,7 +11,7 @@ import copy
 import numpy
 from scipy.optimize import minimize
 import scipy
-
+import LEHRBackgroundMetricBuilder
 
 
 class Edge:
@@ -516,23 +517,67 @@ class metric:
     def calLEHR(self,convar):
         self.vertexCurvatureList = []
         edgeList = copy.deepcopy(self.background.edgeList)
-        edgeTable = self.setEdgeLengths(convar)
-        tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
-        self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+        self.edgeTable = self.setEdgeLengths(convar)
+        self.tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
+        self.good = not self.advancedCheckLegalTetrahedra(self.tetrahedraList,self.edgeTable)
         if self.good == True:
-            for i in range(len(tetrahedraList)):
-                tetrahedraList[i].calculateDihedralAngles(edgeTable)
+            for i in range(len(self.tetrahedraList)):
+                self.tetrahedraList[i].calculateDihedralAngles(self.edgeTable)
             for i in range(len(edgeList)):
-                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+                self.edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(self.tetrahedraList)
             for i in range(1,self.background.vertexNumber+1):
-                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
-            result = self.findLEHR(edgeList,edgeTable)
+                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,self.edgeTable))
+            result = self.findLEHR(edgeList,self.edgeTable)
             self.LEHR = result
-            self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+            self.isLCSC = self.checkLCSC(self.edgeTable,edgeList)
         else:
             result = 1000
 
         return result
+    def advancedPrint(self,conVar):
+        print("Tetrahedran")
+        print("Edges in Tetrahedran")
+        print("Dihedral Angles")
+        print("Volume")
+        print("")
+        for i in range (len(self.background.tetrahedralist)):
+            print(self.background.tetrahedralist[i].vertexList)
+            print(self.background.tetrahedralist[i].edgesintetrahedron)
+            print(self.tetrahedraList[i].dihedralanglelist)
+            edge1=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[1]].edgelength
+            edge2=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[2]].edgelength
+            edge3=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[3]].edgelength
+            edge4=self.edgeTable[self.background.tetrahedralist[i].vertexList[1]][self.background.tetrahedralist[i].vertexList[2]].edgelength
+            edge5=self.edgeTable[self.background.tetrahedralist[i].vertexList[1]][self.background.tetrahedralist[i].vertexList[3]].edgelength
+            edge6=self.edgeTable[self.background.tetrahedralist[i].vertexList[2]][self.background.tetrahedralist[i].vertexList[3]].edgelength
+            det = (-2)*(edge1**4)*(edge6**2)-(2)*(edge1**2)*(edge2**2)*(edge4**2)+(2)*(edge1**2)*(edge2**2)*(edge5**2)+(2)*(edge1**2)*(edge2**2)*(edge6**2)+(2)*(edge1**2)*(edge3**2)*(edge4**2)-(2)*(edge1**2)*(edge3**2)*(edge5**2)+(2)*(edge1**2)*(edge3**2)*(edge6**2)+(2)*(edge1**2)*(edge4**2)*(edge6**2)+(2)*(edge1**2)*(edge5**2)*(edge6**2)-(2)*(edge1**2)*(edge6**4)-(2)*(edge2**4)*(edge5**2)+(2)*(edge2**2)*(edge3**2)*(edge4**2)+(2)*(edge2**2)*(edge3**2)*(edge5**2)-(2)*(edge2**2)*(edge3**2)*(edge6**2)+(2)*(edge2**2)*(edge4**2)*(edge5**2)-(2)*(edge2**2)*(edge5**4)+(2)*(edge2**2)*(edge5**2)*(edge6**2)-(2)*(edge3**4)*(edge4**2)-(2)*(edge3**2)*(edge4**4)+(2)*(edge3**2)*(edge4**2)*(edge5**2)+(2)*(edge3**2)*(edge4**2)*(edge6**2)-(2)*(edge4**2)*(edge5**2)*(edge6**2)
+            print((det/288)**.5)
+            print("")
+        print("Edge List")
+        print("")
+        for i in range(len(self.background.edgeList)):
+            print(self.background.edgeList[i])
+        print("")
+        print("Edge")
+        print("Edge Length")
+        print("Edge Curvature")
+        print("")
+        for i in range(len(self.edgeTable[0])):
+            for j in range(len(self.edgeTable[0])):
+                if self.edgeTable[i][j] != 0:
+                    print("["+str(self.edgeTable[i][j].vertex1)+", "+str(self.edgeTable[i][j].vertex2)+"]")
+                    print(self.edgeTable[i][j].edgelength)
+                    print(self.edgeTable[i][j].edgecurvature)
+                    print("")
+        print("Vertex\nVertex Curvature")
+        for i in range(self.background.vertexNumber):
+            print(i)
+            print(self.vertexCurvatureList[i])
+            print("")
+        print("LEHR: "+str(self.calLEHR(conVar)))
+        print("Is LCSC: "+str(self.isLCSC))
+        print("Is L-Einstein: "+"No Check yet")
+
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
             LCSC = True
@@ -615,6 +660,8 @@ class metric:
         self.vertexCurvatureList = [0]
         self.isLCSC = False
         self.good = True
+        self.tetrahedraList = []
+        self.edgeTable = []
         self.LEHR = self.calLEHR(convar)
         self.minima = []
 
@@ -776,26 +823,25 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
     return [results,failures]
 
 def main():
-   storage = str(0)+".txt"
-   LEHRList = []
-   numberVertices=4
-   numberOfBackgrounds=20
-   numberRestarts = 100
-   #seed=4741252
-   #seed=263594
-   seed=56932684
-   random.seed(seed)
-   #seed=9865721
-   triangulation='manifoldExample3.txt'
-   backgroundfile='backgroundMetric.txt'
-   faceInfo = " "
-   print("Hello World!\n")
+    storage = str(0)+".txt"
+    LEHRList = []
+    numberVertices=4
+    c1 = 0.6584272244313532
+    c2 = 0.5389600156746663
+    conformalVariations = [ 0.4038087 ,  0.40352227,  0.10891371,  0.10915478]
+    #seed=4741252
+    #seed=263594
+    seed=56932684
+    random.seed(seed)
+    #seed=9865721
+    triangulation='manifoldExample3.txt'
+    backgroundfile='backgroundMetric.txt'
+    faceInfo = " "
+    print("Hello World!\n")
 
-   results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
-   for i in range(len(results[0])):
-       print(results[0][i])
-   for i in range(len(results[1])):
-       print(results[1][i])
-
+    modifyBackground(c1,c2, "backgroundMetric.txt")
+    exploreMetric = metric("backgroundMetric.txt","manifoldExample3.txt",conformalVariations)
+    exploreMetric.calLEHR(conformalVariations)
+    exploreMetric.advancedPrint(conformalVariations)
 
 main()
