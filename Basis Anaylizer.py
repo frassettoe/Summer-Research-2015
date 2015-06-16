@@ -530,11 +530,11 @@ class metric:
             self.LEHR = result
             self.isLCSC = self.checkLCSC(edgeTable,edgeList)
         else:
-            result = 1000
+            result=1000
 
         return result
 
-    def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
+    def checkLCSC(self,tableOfEdges,edgeList,error=.01):
             LCSC = True
             listOfLengths = []
             for i in range(self.background.vertexNumber+1):
@@ -551,7 +551,7 @@ class metric:
             return LCSC
 
     def optimizeLEHR(self,convar):
-        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
+        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'xtol':.001, 'ftol':.001,'disp':False})
         #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
@@ -740,11 +740,13 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
     results = []
     failures = []
     working = True
-    results.append(["c1","c2","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
+    results.append(["number","c1","c2","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","Conformal Variations"])
     for k in range(numberBackgrounds):
         c1 = random.random()*10-5
         c2 = random.random()*10-5
+        #c1=0
+        #c2=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
         while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
             c1 = random.random()*10-5
@@ -768,10 +770,10 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
             conVar = temp.x
             working = test.isLCSC
             if working == True:
-                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                results.append([k+1,c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
                 break
         if working == False:
-            failures.append([c1,c2])
+            failures.append([k+1,c1,c2,conVar[0],conVar[1],conVar[2],conVar[3]])
             print(temp)
     return [results,failures]
 
@@ -779,8 +781,8 @@ def main():
    storage = str(0)+".txt"
    LEHRList = []
    numberVertices=4
-   numberOfBackgrounds=20
-   numberRestarts = 100
+   numberOfBackgrounds=3
+   numberRestarts = 10
    #seed=4741252
    #seed=263594
    seed=56932684
