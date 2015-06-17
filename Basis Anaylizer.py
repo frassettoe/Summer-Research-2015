@@ -10,6 +10,8 @@ import copy
 import numpy
 from scipy.optimize import minimize
 import scipy
+import time
+
 
 
 
@@ -753,10 +755,14 @@ def modifyBackground(c1,c2,c3,c4,c5,filename):
 def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
     failures = []
+    times = []
     working = True
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC"])
+    times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
+    startAll = time.time()
     for k in range(numberBackgrounds):
+        startBackground = time.time()
         c1 = random.random()*10-5
         c2 = random.random()*10-5
         c3 = random.random()*10-5
@@ -775,9 +781,11 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             c4 = random.random()
             c5 = random.random()
         for j in range(restarts):
+            startModuli = time.time()
             working = True
             happyConVar = False
             happyBackground = False
+            startConar = time.time()
             while(happyConVar == False):
                 conVar = []
                 while happyBackground == False:
@@ -787,6 +795,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                     c4 = random.random()
                     c5 = random.random()
                     happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
+                endModuli = time.time()
                 for i in range(numberVertices):
                     #sets conformal variations to 0
                     #conVar.append(0)
@@ -796,16 +805,25 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 orignalConVar = copy.deepcopy((conVar))
                 test = metric(backgroundfile,triangulation,conVar)
                 happyConVar = test.good
+            endConVar = time.time()
+            startOpt = time.time()
             temp = test.optimizeLEHR(conVar)
+            endOpt = time.time()
             conVar = temp.x
             working = test.isLCSC
             if working == True:
                 results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
+                endBackground = time.time()
+                times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
                 break
         if working == False:
-            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,restarts])
+            endBackground = time.time()
+            times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
             print(temp)
-    return [results,failures]
+    endAll = time.time()
+    print(endAll-startAll)
+    return [results,failures,times]
 
 def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
@@ -818,10 +836,11 @@ def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
 
 
 def main():
+    start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=1000
+    numberOfBackgrounds=5
     numberRestarts = 5
     #seed=4741252
     #seed=263594
@@ -832,7 +851,6 @@ def main():
     backgroundfile='backgroundMetric.txt'
     faceInfo = " "
     print("Hello World!\n")
-
     results = pentachoronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
     for i in range(len(results[0])):
         print(results[0][i])
@@ -849,6 +867,15 @@ def main():
         for j in range(len(results[1][i])):
             notfoundResultsFile.write(str(results[1][i][j])+" ")
         notfoundResultsFile.write("\n")
+    notfoundResultsFile.close()
+    timeFile = open("timeInformation.txt","w")
+    for i in range(1,len(results[2])):
+        for j in range(len(results[2][i])):
+            timeFile.write(str(results[2][i][j])+" ")
+        timeFile.write("\n")
+    end=time.time()
+    print(end-start)
+    timeFile.write("\n\n"+str(end-start))
     notfoundResultsFile.close()
 
 main()
