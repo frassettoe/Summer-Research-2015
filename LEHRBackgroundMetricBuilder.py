@@ -150,7 +150,7 @@ class Tetrahedron:
 #output: none, makes the edge table of proper size, i.e. 15+1
 #author: MELT, 10/3/14
 #change log:
-def createEdgeTable(numberOfVertices = 15):
+def createEdgeTable(numberOfVertices = 5):
     numberOfVertices = numberOfVertices+1
     for row in range(numberOfVertices):
         edgetable.append([])
@@ -221,7 +221,7 @@ def getBackgroundManifoldFile(listOfTetrahedra,tableOfEdges,fileName = "backgrou
 #change log: Michael 10/16/4
 def main():
     print("Hello World")
-    readFile = open('manifoldExample3.txt')
+    readFile = open('manifoldExample4.txt')
     data = readFile.read()        #Prepares file for read in
     data = data.split("facets :=") #Look up strip to remove white space
     data[1] = data[1].strip('[];')

@@ -551,8 +551,8 @@ class metric:
             return LCSC
 
     def optimizeLEHR(self,convar):
-        #res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
-        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
+        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
+        #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
         return res
@@ -754,21 +754,26 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     results = []
     failures = []
     working = True
-    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","c3","c4","c5","Conformal Variations"])
     for k in range(numberBackgrounds):
-        c1 = random.random()*10-5
-        c2 = random.random()*10-5
-        c3 = random.random()*10-5
-        c4 = random.random()*10-5
-        c5 = random.random()*10-5
+        c1 = random.random()
+        c2 = random.random()
+        c3 = random.random()
+        c4 = random.random()
+        c5 = random.random()
+        # c1=0
+        # c2=0
+        # c3=0
+        # c4=0
+        # c5=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
-            c1 = random.random()*10-5
-            c2 = random.random()*10-5
-            c3 = random.random()*10-5
-            c4 = random.random()*10-5
-            c5 = random.random()*10-5
+        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>.1):
+            c1 = random.random()
+            c2 = random.random()
+            c3 = random.random()
+            c4 = random.random()
+            c5 = random.random()
         for j in range(restarts):
             working = True
             happyConVar = False
@@ -777,9 +782,9 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 modifyBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt")
                 for i in range(numberVertices):
                     #sets conformal variations to 0
-                    #conVar.append(0)
+                    conVar.append(0)
                     #sets random conformal variations
-                    conVar.append(random.random())
+                    #conVar.append(random.random())
                 orignalConVar = []
                 orignalConVar = copy.deepcopy((conVar))
                 test = metric(backgroundfile,triangulation,conVar)
@@ -788,35 +793,33 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             conVar = temp.x
             working = test.isLCSC
             if working == True:
-                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
                 break
         if working == False:
-            failures.append([c1,c2,c3,c4,c5])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
             print(temp)
     return [results,failures]
 
 def main():
    storage = str(0)+".txt"
    LEHRList = []
-   numberVertices=4
-   numberOfBackgrounds=5
-   numberRestarts = 1
+   numberVertices=5
+   numberOfBackgrounds=100
+   numberRestarts = 5
    #seed=4741252
    #seed=263594
    seed=56932684
    random.seed(seed)
    #seed=9865721
-   triangulation='manifoldExample3.txt'
+   triangulation='manifoldExample4.txt'
    backgroundfile='backgroundMetric.txt'
    faceInfo = " "
    print("Hello World!\n")
 
-   #results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
-   # for i in range(len(results[0])):
-   #     print(results[0][i])
-   # for i in range(len(results[1])):
-   #     print(results[1][i])
-   conVar = [0,0,0,0]
-   modifyBackground(1.5,.5,.12,.4,1,backgroundfile)
+   results = pentachoronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+   for i in range(len(results[0])):
+       print(results[0][i])
+   for i in range(len(results[1])):
+       print(results[1][i])
 
 main()
