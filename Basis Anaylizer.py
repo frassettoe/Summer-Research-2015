@@ -551,8 +551,8 @@ class metric:
             return LCSC
 
     def optimizeLEHR(self,convar):
-        #res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
-        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
+        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
+        #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
         return res
@@ -778,27 +778,43 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
         while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
             c1 = random.random()*10-5
             c2 = random.random()*10-5
+        #for j in range(restarts):
         for j in range(restarts):
             working = True
             happyConVar = False
-            while(happyConVar == False):
-                conVar = []
-                modifyBackground(c1,c2, "backgroundMetric.txt")
-                for i in range(numberVertices):
-                    #sets conformal variations to 0
-                    #conVar.append(0)
-                    #sets random conformal variations
-                    conVar.append(random.random())
-                orignalConVar = []
-                orignalConVar = copy.deepcopy((conVar))
-                test = metric(backgroundfile,triangulation,conVar)
-                happyConVar = test.good
-            temp = test.optimizeLEHR(conVar)
-            conVar = temp.x
-            working = test.isLCSC
+            startPoints = []
+            LEHRValues = []
+            for i in range(10):  #number of starting points
+                while(happyConVar == False):
+                    conVar = []
+                    modifyBackground(c1,c2, "backgroundMetric.txt")
+                    for i in range(numberVertices):
+                        #sets conformal variations to 0
+                        #conVar.append(0)
+                        #sets random conformal variations
+                        conVar.append(random.random())
+                    orignalConVar = []
+                    orignalConVar = copy.deepcopy((conVar))
+                    test = metric(backgroundfile,triangulation,conVar)
+                    happyConVar = test.good
+                happyConVar = False
+                tempLEHR = test.calLEHR(conVar)
+                startPoints.append(conVar)
+                LEHRValues.append(tempLEHR)
+            for i in range(5):  #number of starting points explored
+                conVar = startPoints[LEHRValues.index(min(LEHRValues))]
+                print(LEHRValues[LEHRValues.index(min(LEHRValues))])
+                #print(LEHRValues[LEHRValues.index(min(LEHRValues))])
+                LEHRValues[LEHRValues.index(min(LEHRValues))] = 1000
+                temp = test.optimizeLEHR(conVar)
+                conVar = temp.x
+                working = test.isLCSC
+                if working == True:
+                    #results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                    break
             if working == True:
-                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
-                break
+                    results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                    break
         if working == False:
             failures.append([c1,c2])
             print(temp)
@@ -808,7 +824,7 @@ def main():
    storage = str(0)+".txt"
    LEHRList = []
    numberVertices=4
-   numberOfBackgrounds=5
+   numberOfBackgrounds=50
    numberRestarts = 1
    #seed=4741252
    #seed=263594
