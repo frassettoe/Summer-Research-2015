@@ -551,8 +551,8 @@ class metric:
             return LCSC
 
     def optimizeLEHR(self,convar):
-        res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
-        #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
+        #res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
+        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
         return res
@@ -567,6 +567,67 @@ class metric:
                 temp = temp/self.totalEdgeLength
                 Grad.append(temp)
         return numpy.array(Grad)
+
+    def hess(self, convar):
+        self.vertexCurvatureList = []
+        edgeList = copy.deepcopy(self.background.edgeList)
+        edgeTable = self.setEdgeLengths(convar)
+        tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
+        self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+        if self.good == True:
+            for i in range(len(tetrahedraList)):
+                tetrahedraList[i].initalizeTriangles(edgeTable)
+                tetrahedraList[i].calculateDihedralAngles(edgeTable)
+                tetrahedraList[i].getTetCenDis()
+            for i in range(len(edgeList)):
+                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeLengthStar(tetrahedraList)
+            for i in range(1,self.background.vertexNumber+1):
+                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
+            edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(edgeTable,self.background.vertexNumber)
+            result = self.findLEHR(edgeList,edgeTable)
+            self.LEHR = result
+            self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+        else:
+            result = 1000
+        hessian = []
+        for i in range(self.background.vertexNumber):
+        #creating the hessian
+            hessian.append([0]*self.background.vertexNumber)
+            for j in range(self.background.vertexNumber):
+                if edgeTable[i+1][j+1] == 0 and edgeTable[j+1][i+1] == 0 and i!=j:
+                    if edgeTable[i+1][j+1] == 0:
+                        hessian[i][j] = 0
+                elif i == j:
+                    hessian[i][j] = self.hessianSame(edgeStarOverEdgeTotal,i+1)
+                else:
+                    hessian[i][j] = self.hessianDifferent(edgeTable,i+1,j+1)
+        return hessian
+
+    def hessianDifferent(self,edgetable,vertex1,vertex2):
+        if vertex1 > vertex2:
+            lijStarOverlij = edgetable[vertex2][vertex1].edgelengthStar/edgetable[vertex2][vertex1].edgelength
+            edgeCurvature = edgetable[vertex2][vertex1].edgecurvature
+            edgeLength = edgetable[vertex2][vertex1].edgelength
+        else:
+            lijStarOverlij = edgetable[vertex1][vertex2].edgelengthStar/edgetable[vertex1][vertex2].edgelength
+            edgeCurvature = edgetable[vertex1][vertex2].edgecurvature
+            edgeLength = edgetable[vertex1][vertex2].edgelength
+        partial = -2*lijStarOverlij/self.totalEdgeLength
+        partial = partial + edgeCurvature/(4*self.totalEdgeLength)
+        partial = partial - self.LEHR*edgeLength/(4*self.totalEdgeLength)
+        partial = partial - self.vertexCurvatureList[vertex2-1]*self.sumOfEdgesAtVertexList[vertex1-1]/(2*self.totalEdgeLength**2)
+        partial = partial + self.sumOfEdgesAtVertexList[vertex1-1]*self.LEHR*self.sumOfEdgesAtVertexList[vertex2-1]/(2*self.totalEdgeLength**2)
+        partial = partial - self.sumOfEdgesAtVertexList[vertex2-1]*self.vertexCurvatureList[vertex1-1]/(2*self.totalEdgeLength**2)
+        return partial
+
+    def hessianSame(self,edgeStarOverEdgeTotal,vertex):
+        partial = 2*edgeStarOverEdgeTotal[vertex-1]/self.totalEdgeLength
+        partial = partial + self.vertexCurvatureList[vertex-1]/(2*self.totalEdgeLength)
+        partial = partial - self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(4*self.totalEdgeLength)
+        partial = partial - self.sumOfEdgesAtVertexList[vertex-1]*self.vertexCurvatureList[vertex-1]/(self.totalEdgeLength**2)
+        partial = partial + self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(2*self.totalEdgeLength**2)
+        return partial
 
     #true if there exists an illegal tetrahedron
     def advancedCheckLegalTetrahedra(self,listOfTetrahedra,tableOfEdges):
@@ -608,6 +669,20 @@ class metric:
                     self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength/2
         return edgeLengthTable
 
+    def getEdgeStarOverEdgeSums(self,tableOfEdges,numberOfVertices):
+            edgeSumsStar = []
+            for i in range(1,numberOfVertices+1):
+                sums = 0
+                for j in range(1,numberOfVertices+1):
+                    if tableOfEdges[i][j] != 0:
+                        sums = sums + tableOfEdges[i][j].edgelengthStar/tableOfEdges[i][j].edgelength
+                        #print(str(i)+","+str(j)+": "+str(tableOfEdges[i][j].edgelengthStar))
+                    elif tableOfEdges[j][i] != 0:
+                        sums = sums + tableOfEdges[j][i].edgelengthStar/tableOfEdges[j][i].edgelength
+                        #print(str(j)+","+str(i)+": "+str(tableOfEdges[j][i].edgelengthStar))
+                edgeSumsStar.append(sums)
+            return edgeSumsStar
+
     def __init__(self,backgroundFile,triagulation,convar):
         self.background = backgroundMetricClass(backgroundFile,triagulation)
         self.totalEdgeLength = 0
@@ -644,32 +719,6 @@ def ToReducedRowEchelonForm( M):
                 M[i] = [ iv - lv*rv for rv,iv in zip(M[r],M[i])]
         lead += 1
 
-
-def hessianSame(metric,vertex):
-    partial = 2*metric.edgeStarOverEdgeTotal[vertex-1]/metric.totalLength
-    partial = partial + metric.vertexCurvatureList[vertex-1]/(2*metric.totalLength)
-    partial = partial - metric.LEHR*metric.sumOfEdgesAtVertex[vertex-1]**2/(4*metric.totalLength)
-    partial = partial - metric.sumOfEdgesAtVertex[vertex-1]*metric.vertexCurvatureList[vertex-1]/(metric.totalLength**2)
-    partial = partial + metric.LEHR*metric.sumOfEdgesAtVertex[vertex-1]**2/(2*metric.totalLength**2)
-    return partial
-
-def hessianDifferent(metric,vertex1,vertex2):
-    if vertex1 > vertex2:
-        lijStarOverlij = metric.edgetable[vertex2][vertex1].edgelengthStar/metric.edgetable[vertex2][vertex1].edgelength
-        edgeCurvature = metric.edgetable[vertex2][vertex1].edgecurvature
-        edgeLength = metric.edgetable[vertex2][vertex1].edgelength
-    else:
-        lijStarOverlij = metric.edgetable[vertex1][vertex2].edgelengthStar/metric.edgetable[vertex1][vertex2].edgelength
-        edgeCurvature = metric.edgetable[vertex1][vertex2].edgecurvature
-        edgeLength = metric.edgetable[vertex1][vertex2].edgelength
-    partial = -2*lijStarOverlij/metric.totalLength
-    partial = partial + edgeCurvature/(4*metric.totalLength)
-    partial = partial - metric.LEHR*edgeLength/(4*metric.totalLength)
-    partial = partial - metric.vertexCurvatureList[vertex2-1]*metric.sumOfEdgesAtVertex[vertex1-1]/(2*metric.totalLength**2)
-    partial = partial + metric.sumOfEdgesAtVertex[vertex1-1]*metric.LEHR*metric.sumOfEdgesAtVertex[vertex2-1]/(2*metric.totalLength**2)
-    partial = partial - metric.sumOfEdgesAtVertex[vertex2-1]*metric.vertexCurvatureList[vertex1-1]/(2*metric.totalLength**2)
-    return partial
-
 def makePosDef(target,add = 1):
     eigns = numpy.linalg.eigvals((target))
     smallEig = min(eigns)
@@ -679,42 +728,7 @@ def makePosDef(target,add = 1):
     return target
 
 
-    #input: metric, background, triangulation
-    #output: gradient
-    #author: Erin, 6/4/2015
-    #change log: none
-def grad(mainMetric, background, triangulation):
-    Grad =[]
-    for i in range(mainMetric.vertexNumber):
-            #creating the gradient
-            temp = mainMetric.vertexCurvatureList[i]
-            temp = temp-mainMetric.LEHR*.5*mainMetric.sumOfEdgesAtVertex[i]
-            temp = temp/mainMetric.totalLength
-            Grad.append(temp)
-    return Grad
-#
-
-    #input: metric, background, triangulation
-    #output: Hessian
-    #author: Erin, 6/4/2015
-    #change log: none
-def Hess(mainMetric, background, triangulation):
-    hessian = []
-    for i in range(mainMetric.vertexNumber):
-    #creating the hessian
-        hessian.append([0]*mainMetric.vertexNumber)
-        for j in range(mainMetric.vertexNumber):
-            if mainMetric.edgetable[i+1][j+1] == 0 and mainMetric.edgetable[j+1][i+1] == 0 and i!=j:
-                if mainMetric.edgetable[i+1][j+1] == 0:
-                    hessian[i][j] = 0
-            elif i == j:
-                hessian[i][j] = hessianSame(mainMetric,i+1)
-            else:
-                hessian[i][j] = hessianDifferent(mainMetric,i+1,j+1)
-    return hessian
-
-
-def modifyBackground(c1,c2,filename):
+def modifyBackground(c1,c2,c3,c4,c5,filename):
     backgroundMetric = open(filename,"r")
     storage = backgroundMetric.readlines()
     nameList = []
@@ -730,31 +744,37 @@ def modifyBackground(c1,c2,filename):
         nameList[i] = nameList[i].split(",")
         nameList[i][0] = int(nameList[i][0])
         nameList[i][1] = int(nameList[i][1])
-    lengthList = [(math.exp(c1))**.5,(math.exp(c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(-c1-c2))**.5,(math.exp(c2))**.5,(math.exp(c1))**.5]
+    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
     backgroundMetric = open(filename,"w")
     for i in range(len(nameList)):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
     backgroundMetric.close()
 
-def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
+def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
     failures = []
     working = True
-    results.append(["c1","c2","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","Conformal Variations"])
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","LEHR","LCSC","L-Einstein","numberRestarts"])
+    failures.append(["c1","c2","c3","c4","c5","Conformal Variations"])
     for k in range(numberBackgrounds):
         c1 = random.random()*10-5
         c2 = random.random()*10-5
+        c3 = random.random()*10-5
+        c4 = random.random()*10-5
+        c5 = random.random()*10-5
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
         while(not (-math.exp(c2)+math.exp(c1)+math.exp(-c1-c2) > 0 and math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) > 0 and -math.exp(c2)+math.exp(c1)-math.exp(-c1-c2) < 0)):
             c1 = random.random()*10-5
             c2 = random.random()*10-5
+            c3 = random.random()*10-5
+            c4 = random.random()*10-5
+            c5 = random.random()*10-5
         for j in range(restarts):
             working = True
             happyConVar = False
             while(happyConVar == False):
                 conVar = []
-                modifyBackground(c1,c2, "backgroundMetric.txt")
+                modifyBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt")
                 for i in range(numberVertices):
                     #sets conformal variations to 0
                     #conVar.append(0)
@@ -768,10 +788,10 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
             conVar = temp.x
             working = test.isLCSC
             if working == True:
-                results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
                 break
         if working == False:
-            failures.append([c1,c2])
+            failures.append([c1,c2,c3,c4,c5])
             print(temp)
     return [results,failures]
 
@@ -779,8 +799,8 @@ def main():
    storage = str(0)+".txt"
    LEHRList = []
    numberVertices=4
-   numberOfBackgrounds=20
-   numberRestarts = 100
+   numberOfBackgrounds=5
+   numberRestarts = 1
    #seed=4741252
    #seed=263594
    seed=56932684
@@ -791,11 +811,12 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
 
-   results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
-   for i in range(len(results[0])):
-       print(results[0][i])
-   for i in range(len(results[1])):
-       print(results[1][i])
-
+   #results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+   # for i in range(len(results[0])):
+   #     print(results[0][i])
+   # for i in range(len(results[1])):
+   #     print(results[1][i])
+   conVar = [0,0,0,0]
+   modifyBackground(1.5,.5,.12,.4,1,backgroundfile)
 
 main()
