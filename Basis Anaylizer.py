@@ -755,20 +755,20 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     failures = []
     working = True
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","c3","c4","c5","Conformal Variations"])
+    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC"])
     for k in range(numberBackgrounds):
-        c1 = random.random()
-        c2 = random.random()
-        c3 = random.random()
-        c4 = random.random()
-        c5 = random.random()
+        c1 = random.random()*10-5
+        c2 = random.random()*10-5
+        c3 = random.random()*10-5
+        c4 = random.random()*10-5
+        c5 = random.random()*10-5
         # c1=0
         # c2=0
         # c3=0
         # c4=0
         # c5=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>.1):
+        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>10):
             c1 = random.random()
             c2 = random.random()
             c3 = random.random()
@@ -777,9 +777,16 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         for j in range(restarts):
             working = True
             happyConVar = False
+            happyBackground = False
             while(happyConVar == False):
                 conVar = []
-                modifyBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt")
+                while happyBackground == False:
+                    c1 = random.random()
+                    c2 = random.random()
+                    c3 = random.random()
+                    c4 = random.random()
+                    c5 = random.random()
+                    happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
                 for i in range(numberVertices):
                     #sets conformal variations to 0
                     #conVar.append(0)
@@ -800,26 +807,48 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             print(temp)
     return [results,failures]
 
-def main():
-   storage = str(0)+".txt"
-   LEHRList = []
-   numberVertices=5
-   numberOfBackgrounds=100
-   numberRestarts = 5
-   #seed=4741252
-   #seed=263594
-   seed=56932684
-   random.seed(seed)
-   #seed=9865721
-   triangulation='manifoldExample4.txt'
-   backgroundfile='backgroundMetric.txt'
-   faceInfo = " "
-   print("Hello World!\n")
+def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
+    modifyBackground(c1,c2,c3,c4,c5,background)
+    test = metric(background,triagulation,[0,0,0,0,0])
+    LEHR = test.calLEHR([0,0,0,0,0])
+    if LEHR == 1000:
+        return False
+    else:
+        return True
 
-   results = pentachoronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
-   for i in range(len(results[0])):
-       print(results[0][i])
-   for i in range(len(results[1])):
-       print(results[1][i])
+
+def main():
+    storage = str(0)+".txt"
+    LEHRList = []
+    numberVertices=5
+    numberOfBackgrounds=1000
+    numberRestarts = 5
+    #seed=4741252
+    #seed=263594
+    seed=56932684
+    random.seed(seed)
+    #seed=9865721
+    triangulation='manifoldExample4.txt'
+    backgroundfile='backgroundMetric.txt'
+    faceInfo = " "
+    print("Hello World!\n")
+
+    results = pentachoronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+    for i in range(len(results[0])):
+        print(results[0][i])
+    for i in range(len(results[1])):
+        print(results[1][i])
+    foundResultsFile = open("foundResults.txt","w")
+    for i in range(1,len(results[0])):
+        for j in range(len(results[0][i])):
+            foundResultsFile.write(str(results[0][i][j])+" ")
+        foundResultsFile.write("\n")
+    foundResultsFile.close()
+    notfoundResultsFile = open("notFoundResults.txt","w")
+    for i in range(1,len(results[1])):
+        for j in range(len(results[1][i])):
+            notfoundResultsFile.write(str(results[1][i][j])+" ")
+        notfoundResultsFile.write("\n")
+    notfoundResultsFile.close()
 
 main()
