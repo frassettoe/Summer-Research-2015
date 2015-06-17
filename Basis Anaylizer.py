@@ -782,9 +782,9 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 modifyBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt")
                 for i in range(numberVertices):
                     #sets conformal variations to 0
-                    conVar.append(0)
+                    #conVar.append(0)
                     #sets random conformal variations
-                    #conVar.append(random.random())
+                    conVar.append(random.random())
                 orignalConVar = []
                 orignalConVar = copy.deepcopy((conVar))
                 test = metric(backgroundfile,triangulation,conVar)

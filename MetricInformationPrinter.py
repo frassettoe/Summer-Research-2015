@@ -840,7 +840,7 @@ def main():
     print("Hello World!\n")
 
     modifyBackground(c1,c2, "backgroundMetric.txt")
-    exploreMetric = metric("backgroundMetric.txt","manifoldExample3.txt",conformalVariations)
+    exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
 
