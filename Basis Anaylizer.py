@@ -815,16 +815,64 @@ def doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,restarts =
             if working == True:
                     results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
                     break
+            else:
+                working = geneticSearch(startPoints,test)
+                conVar = working[1]
+                working = working[0]
+                if working == True:
+                    results.append([c1,c2,conVar[0],conVar[1],conVar[2],conVar[3],test.LEHR,test.isLCSC])
+                    break
         if working == False:
             failures.append([c1,c2])
             print(temp)
     return [results,failures]
 
+def geneticSearch(beings,metricObject,generations = 100):
+    print("Preforming Genetic Search...")
+    for i in range(generations):
+        print("Creating Generation: "+ str(i))
+        goodness = []  #conformal variaitons that give miniumum
+        hardiness = [] #LEHR minimum found
+        newGeneration = [] #stores next generation's conformal variations
+        for j in range(len(beings)):
+            results = metricObject.optimizeLEHR(beings[j])
+            goodness.append(results.x)
+            hardiness.append(metricObject.calLEHR(goodness[j]))
+            newGeneration.append(hardiness[j])
+            done = metricObject.isLCSC
+            if done == True:
+                return [True,goodness[j]]
+        #print("Breeding...")
+        for j in range(len(beings)):
+            parent1 = hardiness.index(min(hardiness))
+            hardiness[parent1] = 1000
+            parent2 = hardiness.index(min(hardiness))
+            newGeneration[j] = [beings[parent1][0],beings[parent2][1],beings[parent1][2],beings[parent2][3]]
+        beings = newGeneration
+        #print("Mutating...")
+        for j in range(len(beings)):
+            spot = random.randint(0,len(beings[j])-1)
+            beings[j][spot] = beings[j][spot]+beings[j][spot]*(random.random()*i/generations-i/(2*generations))
+        for j in range(len(beings)):
+            results = metricObject.optimizeLEHR(beings[j])
+            goodness[j] = results.x
+            hardiness[j] = metricObject.calLEHR(beings[j])
+            done = metricObject.isLCSC
+            if done == True:
+                print("\n\n IT LIVES MWAHAAAAAA \n\n")
+                return [True,goodness[k]]
+        print(str(goodness))
+
+    return [False,0]
+
+
+
+
 def main():
    storage = str(0)+".txt"
    LEHRList = []
    numberVertices=4
-   numberOfBackgrounds=50
+   numberOfBackgrounds=5
    numberRestarts = 1
    #seed=4741252
    #seed=263594
