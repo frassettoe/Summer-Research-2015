@@ -9,6 +9,7 @@ import random
 import copy
 import numpy
 from scipy.optimize import minimize
+from scipy.optimize import check_grad
 import scipy
 
 
@@ -552,7 +553,8 @@ class metric:
 
     def optimizeLEHR(self,convar):
         #res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
-        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
+        res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,options={'disp':True})
+        #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
         self.minima = res.x
         return res
@@ -566,7 +568,10 @@ class metric:
                 temp = temp-self.LEHR*.5*self.sumOfEdgesAtVertexList[i]
                 temp = temp/self.totalEdgeLength
                 Grad.append(temp)
+                #numpy.insert(Grad,temp)
         return numpy.array(Grad)
+
+        #return Grad
 
     def hess(self, convar):
         self.vertexCurvatureList = []
@@ -808,7 +813,7 @@ def main():
    storage = str(0)+".txt"
    LEHRList = []
    numberVertices=4
-   numberOfBackgrounds=5
+   numberOfBackgrounds=1
    numberRestarts = 1
    #seed=4741252
    #seed=263594
@@ -820,13 +825,18 @@ def main():
    faceInfo = " "
    print("Hello World!\n")
 
-   results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
-   for i in range(len(results[0])):
-       print(results[0][i])
-   for i in range(len(results[1])):
-       print(results[1][i])
+   # results = doubleTetrahedronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+   # for i in range(len(results[0])):
+   #     print(results[0][i])
+   # for i in range(len(results[1])):
+   #     print(results[1][i])
    # conVar = [1,1.5,.5,.8936]
    # test = metric(backgroundfile,triangulation,conVar)
    # test.hess(conVar)
-
+   conVar = [1,.5,.75,0]
+   modifyBackground(0,0,backgroundfile)
+   test2 = metric(backgroundfile,triangulation,conVar)
+   #print(test2.grad(conVar))
+   error = check_grad(test2.calLEHR,test2.grad,[.7,.2,.35,1.])
+   print(error)
 main()
