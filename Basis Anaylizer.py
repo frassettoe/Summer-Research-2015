@@ -737,15 +737,6 @@ def makePosDef(target,add = 1):
     #output: gradient
     #author: Erin, 6/4/2015
     #change log: none
-def grad(mainMetric, background, triangulation):
-    Grad =[]
-    for i in range(mainMetric.vertexNumber):
-            #creating the gradient
-            temp = mainMetric.vertexCurvatureList[i]
-            temp = temp-mainMetric.LEHR*.5*mainMetric.sumOfEdgesAtVertex[i]
-            temp = temp/mainMetric.totalLength
-            Grad.append(temp)
-    return Grad
 
 
 def modifyBackground(c1,c2,filename):
@@ -833,10 +824,10 @@ def main():
    # conVar = [1,1.5,.5,.8936]
    # test = metric(backgroundfile,triangulation,conVar)
    # test.hess(conVar)
-   conVar = [1,.5,.75,0]
-   modifyBackground(0,0,backgroundfile)
+   conVar = [.8,.9,.25,.73]
+   modifyBackground(.4,.3,backgroundfile)
    test2 = metric(backgroundfile,triangulation,conVar)
    #print(test2.grad(conVar))
-   error = check_grad(test2.calLEHR,test2.grad,[.7,.2,.35,1.])
+   error = check_grad(test2.calLEHR,test2.grad,conVar)
    print(error)
 main()
