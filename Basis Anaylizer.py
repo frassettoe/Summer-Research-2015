@@ -730,14 +730,6 @@ def ToReducedRowEchelonForm( M):
                 M[i] = [ iv - lv*rv for rv,iv in zip(M[r],M[i])]
         lead += 1
 
-def makePosDef(target,add = 1):
-    eigns = numpy.linalg.eigvals((target))
-    smallEig = min(eigns)
-    if(smallEig <= 0):
-        target = target + (math.fabs(smallEig)+add)*numpy.identity(target.size**.5)
-    eigns2=numpy.linalg.eigvals(target)
-    return target
-
 
 def modifyBackground(c1,c2,c3,c4,c5,filename):
     backgroundMetric = open(filename,"r")
@@ -885,6 +877,7 @@ def main():
     end=time.time()
     print(end-start)
     timeFile.write("\n\n"+str(end-start))
+    timeFile.close()
     notfoundResultsFile.close()
 
 main()
