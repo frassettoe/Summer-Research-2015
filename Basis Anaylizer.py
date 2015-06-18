@@ -72,10 +72,12 @@ class Edge:
             list.remove(self.vertex2)
             kLoc = list[0]
             lLoc = list[1]
-            hijk = listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)].hList[listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)].vertexList.index(kLoc)]
-            hijkl = listOfTetrahedra[tetLocation].tetCenDisList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)]
-            hijl = listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)].hList[listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)].vertexList.index(lLoc)]
-            hijlk = listOfTetrahedra[tetLocation].tetCenDisList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)]
+            lface = listOfTetrahedra[tetLocation].vertexList.index(lLoc)
+            kface = listOfTetrahedra[tetLocation].vertexList.index(kLoc)
+            hijk = listOfTetrahedra[tetLocation].faceList[lface].hList[listOfTetrahedra[tetLocation].faceList[lface].vertexList.index(kLoc)]
+            hijkl = listOfTetrahedra[tetLocation].tetCenDisList[lface]
+            hijl = listOfTetrahedra[tetLocation].faceList[kface].hList[listOfTetrahedra[tetLocation].faceList[kface].vertexList.index(lLoc)]
+            hijlk = listOfTetrahedra[tetLocation].tetCenDisList[kface]
             singleStar = hijk*hijkl+hijl*hijlk
             starList.append(singleStar)
         self.edgelengthStar = .5*sum(starList)
@@ -96,8 +98,11 @@ class face:
     def __init__(self, edgeTable, vertex1 = 1, vertex2 = 2, vertex3 = 3):
         self.vertexList = [vertex1,vertex2,vertex3]
         self.edgeLength = [edgeTable[vertex2][vertex3].edgelength,edgeTable[vertex1][vertex3].edgelength,edgeTable[vertex1][vertex2].edgelength]  #edgeLength[i] is opposite to vertex i-1
-        self.angleList = [math.acos(self.getAngle(self.edgeLength[0],self.edgeLength[1],self.edgeLength[2])),math.acos(self.getAngle(self.edgeLength[1],self.edgeLength[0],self.edgeLength[2])),math.acos(self.getAngle(self.edgeLength[2],self.edgeLength[1],self.edgeLength[0]))]
-        self.hList = [self.getTriCenDis(self.edgeLength[2],self.edgeLength[0],self.angleList[1]),self.getTriCenDis(self.edgeLength[0],self.edgeLength[1],self.angleList[2]),self.getTriCenDis(self.edgeLength[1],self.edgeLength[2],self.angleList[0])]
+        edge1 = self.edgeLength[0]
+        edge2 = self.edgeLength[1]
+        edge3 = self.edgeLength[2]
+        self.angleList = [math.acos(self.getAngle(edge1,edge2,edge3)),math.acos(self.getAngle(edge2,edge1,edge3)),math.acos(self.getAngle(edge3,edge2,edge1))]
+        self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]
 
 
 class Tetrahedron:
@@ -861,7 +866,6 @@ def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
         return False
     else:
         return True
-
 
 def main():
     start= time.time()
