@@ -796,23 +796,17 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     startAll = time.time()
     for k in range(numberBackgrounds):
         startBackground = time.time()
-        c1 = random.random()*10-5
-        c2 = random.random()*10-5
-        c3 = random.random()*10-5
-        c4 = random.random()*10-5
-        c5 = random.random()*10-5
+        c1 = random.random()*4-2
+        c2 = random.random()*4-2
+        c3 = random.random()*4-2
+        c4 = random.random()*4-2
+        c5 = random.random()*4-2
         # c1=0
         # c2=0
         # c3=0
         # c4=0
         # c5=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>10):
-            c1 = random.random()
-            c2 = random.random()
-            c3 = random.random()
-            c4 = random.random()
-            c5 = random.random()
         for j in range(restarts):
             startModuli = time.time()
             working = True
@@ -822,11 +816,11 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             while(happyConVar == False):
                 conVar = []
                 while happyBackground == False:
-                    c1 = random.random()
-                    c2 = random.random()
-                    c3 = random.random()
-                    c4 = random.random()
-                    c5 = random.random()
+                    c1 = random.random()*.5
+                    c2 = random.random()*.5
+                    c3 = random.random()*.5
+                    c4 = random.random()*.5
+                    c5 = random.random()*.5
                     happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
                 endModuli = time.time()
                 for i in range(numberVertices):
@@ -834,8 +828,6 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                     #conVar.append(0)
                     #sets random conformal variations
                     conVar.append(random.random())
-                orignalConVar = []
-                orignalConVar = copy.deepcopy((conVar))
                 test = metric(backgroundfile,triangulation,conVar)
                 happyConVar = test.good
             endConVar = time.time()
@@ -905,11 +897,6 @@ def main():
         for j in range(len(results[2][i])):
             timeFile.write(str(results[2][i][j])+" ")
         timeFile.write("\n")
-    # temp = 0
-    # test = [0]*1000000
-    # test = len(test)
-    # for i in range(test):
-    #     temp = temp+1
     end=time.time()
     print(end-start)
     timeFile.write("\n\n"+str(end-start))
