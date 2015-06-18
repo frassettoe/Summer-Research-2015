@@ -607,6 +607,7 @@ class metric:
                     hessian[i][j] = self.hessianSame(edgeStarOverEdgeTotal,i+1)
                 else:
                     hessian[i][j] = self.hessianDifferent(edgeTable,i+1,j+1)
+        self.makePosDef(numpy.asarray(hessian),.1)
         return hessian
 
     def hessianDifferent(self,edgetable,vertex1,vertex2):
@@ -633,6 +634,14 @@ class metric:
         partial = partial - self.sumOfEdgesAtVertexList[vertex-1]*self.vertexCurvatureList[vertex-1]/(self.totalEdgeLength**2)
         partial = partial + self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(2*self.totalEdgeLength**2)
         return partial
+
+    def makePosDef(self,target,add = 1):
+        eigns = numpy.linalg.eigvals((target))
+        smallEig = min(eigns)
+        if(smallEig <= 0):
+            target = target + (math.fabs(smallEig)+add)*numpy.identity(target.size**.5)
+        eigns2=numpy.linalg.eigvals(target)
+        return target
 
     #true if there exists an illegal tetrahedron
     def advancedCheckLegalTetrahedra(self,listOfTetrahedra,tableOfEdges):
