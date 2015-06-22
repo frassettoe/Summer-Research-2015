@@ -552,6 +552,7 @@ class metric:
             result = self.findLEHR(edgeList,edgeTable)
             self.LEHR = result
             self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+            self.isLEinstein = self.checkLEinstein(edgeTable,edgeList)
         else:
             result = 1000
 
@@ -576,6 +577,19 @@ class metric:
                     LCSC = False
                     break
             return LCSC
+
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
+        LEinstein = True
+        for i in range(len(self.background.edgeList)):
+                edgeSpot1 = edgeList[i][0]
+                edgeSpot2 = edgeList[i][1]
+        for i in range(len(edgeList)):
+            curvature=tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature
+            LEHRl=tableOfEdges[edgeSpot1][edgeSpot2].edgelength
+            LEHRl=LEHRl*self.LEHR
+            if math.fabs(curvature-LEHRl)> error:
+                LEinstein= False
+        return LEinstein
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
@@ -732,6 +746,7 @@ class metric:
         self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         self.vertexCurvatureList = [0]
         self.isLCSC = False
+        self.isLEinstein = False
         self.good = True
         self.LEHR = 1000
         self.minima = []
@@ -790,8 +805,8 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     failures = []
     times = []
     working = True
-    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC"])
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein"])
+    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein","numberRestarts"])
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
     startAll = time.time()
     for k in range(numberBackgrounds):
@@ -837,12 +852,12 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             conVar = temp.x
             working = test.isLCSC
             if working == True:
-                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
+                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
                 break
         if working == False:
-            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,restarts])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,restarts])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
             print(temp)
@@ -864,7 +879,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=100
+    numberOfBackgrounds=2
     numberRestarts = 5
     #seed=4741252
     #seed=263594
