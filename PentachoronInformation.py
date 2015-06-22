@@ -534,6 +534,7 @@ class metric:
             result = 1000
 
         return result
+
     def advancedPrint(self,conVar):
         print("Tetrahedran")
         print("Edges in Tetrahedran")
@@ -858,5 +859,6 @@ def main():
     exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
+
 
 main()

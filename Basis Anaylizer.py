@@ -540,6 +540,7 @@ class metric:
         self.vertexCurvatureList = []
         edgeList = self.background.edgeList
         edgeTable = self.setEdgeLengths(convar)
+        self.edgeTable = edgeTable
         tetrahedraList = self.background.tetrahedralist
         self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
         if self.good == True:
@@ -557,6 +558,8 @@ class metric:
             result = 1000
 
         return result
+
+
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
             LCSC = True
@@ -590,6 +593,7 @@ class metric:
             if math.fabs(curvature-LEHRl)> error:
                 LEinstein= False
         return LEinstein
+
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
@@ -749,6 +753,7 @@ class metric:
         self.isLEinstein = False
         self.good = True
         self.LEHR = 1000
+        self.edgeTable = []
         self.minima = []
 
 
@@ -804,10 +809,12 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     results = []
     failures = []
     times = []
+    lengths = []
     working = True
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein"])
     failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein","numberRestarts"])
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
+    lengths.append(["Edges"])
     startAll = time.time()
     for k in range(numberBackgrounds):
         startBackground = time.time()
@@ -852,9 +859,15 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             conVar = temp.x
             working = test.isLCSC
             if working == True:
+                listOfLengths = []
                 results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
+                for i in range(len(test.edgeTable)):
+                    for j in range(len(test.edgeTable)):
+                        if test.edgeTable[i][j] != 0:
+                            listOfLengths.append(test.edgeTable[i][j].edgelength)
+                lengths.append(listOfLengths)
                 break
         if working == False:
             failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,restarts])
@@ -863,7 +876,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             print(temp)
     endAll = time.time()
     print(endAll-startAll)
-    return [results,failures,times]
+    return [results,failures,times,lengths]
 
 def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
@@ -907,6 +920,12 @@ def main():
             notfoundResultsFile.write(str(results[1][i][j])+" ")
         notfoundResultsFile.write("\n")
     notfoundResultsFile.close()
+    lengthsFile = open("foundLengths.txt","w")
+    for i in range(1,len(results[3])):
+        for j in range(len(results[3][i])):
+            lengthsFile.write(str(results[3][i][j])+" ")
+        lengthsFile.write("\n")
+    lengthsFile.close()
     timeFile = open("timeInformation.txt","w")
     for i in range(1,len(results[2])):
         for j in range(len(results[2][i])):
