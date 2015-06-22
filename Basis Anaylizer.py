@@ -11,6 +11,7 @@ import numpy
 from scipy.optimize import minimize
 import scipy
 import time
+import cProfile
 
 
 
@@ -72,10 +73,12 @@ class Edge:
             list.remove(self.vertex2)
             kLoc = list[0]
             lLoc = list[1]
-            hijk = listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)].hList[listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)].vertexList.index(kLoc)]
-            hijkl = listOfTetrahedra[tetLocation].tetCenDisList[listOfTetrahedra[tetLocation].vertexList.index(lLoc)]
-            hijl = listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)].hList[listOfTetrahedra[tetLocation].faceList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)].vertexList.index(lLoc)]
-            hijlk = listOfTetrahedra[tetLocation].tetCenDisList[listOfTetrahedra[tetLocation].vertexList.index(kLoc)]
+            lface = listOfTetrahedra[tetLocation].vertexList.index(lLoc)
+            kface = listOfTetrahedra[tetLocation].vertexList.index(kLoc)
+            hijk = listOfTetrahedra[tetLocation].faceList[lface].hList[listOfTetrahedra[tetLocation].faceList[lface].vertexList.index(kLoc)]
+            hijkl = listOfTetrahedra[tetLocation].tetCenDisList[lface]
+            hijl = listOfTetrahedra[tetLocation].faceList[kface].hList[listOfTetrahedra[tetLocation].faceList[kface].vertexList.index(lLoc)]
+            hijlk = listOfTetrahedra[tetLocation].tetCenDisList[kface]
             singleStar = hijk*hijkl+hijl*hijlk
             starList.append(singleStar)
         self.edgelengthStar = .5*sum(starList)
@@ -96,8 +99,11 @@ class face:
     def __init__(self, edgeTable, vertex1 = 1, vertex2 = 2, vertex3 = 3):
         self.vertexList = [vertex1,vertex2,vertex3]
         self.edgeLength = [edgeTable[vertex2][vertex3].edgelength,edgeTable[vertex1][vertex3].edgelength,edgeTable[vertex1][vertex2].edgelength]  #edgeLength[i] is opposite to vertex i-1
-        self.angleList = [math.acos(self.getAngle(self.edgeLength[0],self.edgeLength[1],self.edgeLength[2])),math.acos(self.getAngle(self.edgeLength[1],self.edgeLength[0],self.edgeLength[2])),math.acos(self.getAngle(self.edgeLength[2],self.edgeLength[1],self.edgeLength[0]))]
-        self.hList = [self.getTriCenDis(self.edgeLength[2],self.edgeLength[0],self.angleList[1]),self.getTriCenDis(self.edgeLength[0],self.edgeLength[1],self.angleList[2]),self.getTriCenDis(self.edgeLength[1],self.edgeLength[2],self.angleList[0])]
+        edge1 = self.edgeLength[0]
+        edge2 = self.edgeLength[1]
+        edge3 = self.edgeLength[2]
+        self.angleList = [math.acos(self.getAngle(edge1,edge2,edge3)),math.acos(self.getAngle(edge2,edge1,edge3)),math.acos(self.getAngle(edge3,edge2,edge1))]
+        self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]
 
 
 class Tetrahedron:
@@ -128,6 +134,7 @@ class Tetrahedron:
         self.dihedralanglelist = []
         self.tetCenDisList = [0]*4
         self.faceList = [0]*4 #faceList[i] is the face oppositve vertex i-1
+        self.angleTable = []
     #
 
 
@@ -220,7 +227,12 @@ class Tetrahedron:
         temp = temp/math.sin(math.acos(self.getAngle(Ejk,Eij,Eik)))
         temp = temp/math.sin(math.acos(self.getAngle(Ejl,Eij,Eil)))
         return temp
+
+        #temp = angle oposite Edge kl-angle oposite edge kj * angle opposite edge jl
     #
+
+    def fillAngleTable(self):
+        temp = []
 
     #input: table of edge objects
     #output: none, finds the dihedral angle at each edge and adds it to the dihedralanglelist
@@ -228,12 +240,25 @@ class Tetrahedron:
     #change log:
     def calculateDihedralAngles(self,tableOfEdges):  #Used to find all the dihedral angles of a tetrahedron
         self.dihedralanglelist = []
+        angleTable = [0]*12
         edge12=tableOfEdges[self.vertex1][self.vertex2].edgelength  #gets edge lengths in a form easier for the coder to understand
         edge13=tableOfEdges[self.vertex1][self.vertex3].edgelength  #this reduced the risk of mistyping the order of edges in calDiAngle calls
         edge14=tableOfEdges[self.vertex1][self.vertex4].edgelength
         edge23=tableOfEdges[self.vertex2][self.vertex3].edgelength
         edge24=tableOfEdges[self.vertex2][self.vertex4].edgelength
         edge34=tableOfEdges[self.vertex3][self.vertex4].edgelength
+        angleTable[0] = self.getAngle(edge12,edge23,edge13)
+        angleTable[1] = self.getAngle(edge23,edge12,edge13)
+        angleTable[2] = self.getAngle(edge13,edge23,edge12)
+        angleTable[3] = self.getAngle(edge13,edge14,edge34)
+        angleTable[4] = self.getAngle(edge14,edge13,edge34)
+        angleTable[5] = self.getAngle(edge34,edge14,edge13)
+        angleTable[6] = self.getAngle(edge12,edge14,edge24)
+        angleTable[7] = self.getAngle(edge14,edge12,edge24)
+        angleTable[8] = self.getAngle(edge24,edge14,edge12)
+        angleTable[9] = self.getAngle(edge24,edge34,edge23)
+        angleTable[10] = self.getAngle(edge34,edge24,edge23)
+        angleTable[11] = self.getAngle(edge23,edge34,edge24)
         self.dihedralanglelist.append(math.acos(self.calDiAngle(edge12,edge13,edge14,edge23,edge24,edge34)))  #finds each dihedral angle
         self.dihedralanglelist.append(math.acos(self.calDiAngle(edge13,edge12,edge14,edge23,edge34,edge24)))
         self.dihedralanglelist.append(math.acos(self.calDiAngle(edge14,edge13,edge12,edge34,edge24,edge23)))
@@ -259,8 +284,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         listOfLengths = []
         listOfCurvatures = []
         for i in range(len(listOfEdges)):  #for each edge, adds length and curvature of edge to respective list
-            listOfLengths.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
-            listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
+            edgeSpot1 = listOfEdges[i][0]
+            edgeSpot2 = listOfEdges[i][1]
+            listOfLengths.append(tableOfEdges[edgeSpot1][edgeSpot2].edgelength)
+            listOfCurvatures.append(tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature)
         return sum(listOfCurvatures)/sum(listOfLengths)  #preforms LEHR formula
     #
 
@@ -301,16 +328,18 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         for i in range(len(listOfTetrahedra)):  #for each tetrahedra
             for j in range(len(listOfTetrahedra[i].edgesintetrahedron)):  #look at every edge in the tetrahedra
                     # If edge is not in the the tableOfEdges, add it
-                    if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
+                    edgeInTetrahedronIndex1 = listOfTetrahedra[i].edgesintetrahedron[j][0]
+                    edgesInTetrahedronIndex2 = listOfTetrahedra[i].edgesintetrahedron[j][1]
+                    if tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2] == 0:
                         # Assigns edge its name
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[counter])
+                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2] = Edge(edgeInTetrahedronIndex1,edgesInTetrahedronIndex2,lengthList[counter])
                         counter = counter+1  #increases the number of edges counted by one
                         # Adds tetrahedran to list of tetrahedra edge is in
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
-                        listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
+                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2].tetrahedraEdgeIsIn.append(i)
+                        listOfEdges.append([edgeInTetrahedronIndex1,edgesInTetrahedronIndex2])
                     # adds edge to edgesInTetrahedra list if edge already exists in the table
                     else:
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
+                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2].tetrahedraEdgeIsIn.append(i)
     #10/29/14: Michael Added new ability! Function can now be given a backgroundmetric and a list of conformal variations.
     #Both must be given in order for new function attibutes to be used.  Old use without conformal variations and background metric can still be used.
     #11/18/14: Micahel and Erin removed the ability to not take a background metric and conformal variations.
@@ -344,15 +373,20 @@ class backgroundMetricClass: #need to change so conformal variations are always 
     def createTetrahedraList(self,primalList):  #creates list of tetrahedra in metric
         numberOfVertices = 0
         for i in range(len(primalList)):
-            self.tetrahedralist.append(Tetrahedron(primalList[i][0],primalList[i][1],primalList[i][2],primalList[i][3]))
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][0],primalList[i][1]])
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][0],primalList[i][2]])
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][0],primalList[i][3]])
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][1],primalList[i][2]])
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][1],primalList[i][3]])
-            self.tetrahedralist[i].edgesintetrahedron.append([primalList[i][2],primalList[i][3]])
-            if numberOfVertices < self.tetrahedralist[i].vertex4:
-                numberOfVertices = self.tetrahedralist[i].vertex4
+            vertex1 = primalList[i][0]
+            vertex2 = primalList[i][1]
+            vertex3 = primalList[i][2]
+            vertex4 = primalList[i][3]
+            self.tetrahedralist.append(Tetrahedron(vertex1,vertex2,vertex3,vertex4))
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex1,vertex2])
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex1,vertex3])
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex1,vertex4])
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex2,vertex3])
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex2,vertex4])
+            self.tetrahedralist[i].edgesintetrahedron.append([vertex3,vertex4])
+            largestNumber = self.tetrahedralist[i].vertex4
+            if numberOfVertices < largestNumber:
+                numberOfVertices = largestNumber
         return numberOfVertices
     #10/16/2014 MELT added vertex counter
 
@@ -368,6 +402,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
             if legal == False:
                 #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
                 everIllegal = True
+                break  #delete statement if uncommenting print command
         return everIllegal
     #
     #input: table of edges
@@ -407,8 +442,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         for i in range(self.vertexNumber+1):  #creates a spot for each vertex
             listOfLengths.append([0])
         for i in range(len(self.edgeList)):  #for each edge
-            listOfLengths[self.edgeList[i][0]].append(self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength)  #adds edge length to the two verticies are connected
-            listOfLengths[self.edgeList[i][1]].append(self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength)
+            edge1 = self.edgeList[i][0]
+            edge2 = self.edgeList[i][1]
+            listOfLengths[edge1].append(self.edgetable[edge1][edge2].edgelength)  #adds edge length to the two verticies are connected
+            listOfLengths[edge2].append(self.edgetable[edge1][edge2].edgelength)
        # for i in range(self.vertexNumber):
        #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
         for i in range(1,self.vertexNumber+1):
@@ -424,8 +461,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
     def checkLEinstein(self,error=.0001):
         LEinstein = True
         for i in range(len(self.edgeList)):  # for each edge
-            curvature=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgecurvature  #find edge curvature
-            LEHRl=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength  #find edge length
+            edge1 = self.edgeList[i][0]
+            edge2 = self.edgeList[i][1]
+            curvature=self.edgetable[edge1][edge2].edgecurvature  #find edge curvature
+            LEHRl=self.edgetable[edge1][edge2].edgelength  #find edge length
             LEHRl=LEHRl*self.LEHR  #multiply edge length by LEHR
             if math.fabs(curvature-LEHRl)> error:  #check if L-Einstein met
                 LEinstein= False
@@ -502,8 +541,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
                 self.tetrahedralist[i].calculateDihedralAngles(self.edgetable)  #finds dihedral angles
                 self.tetrahedralist[i].getTetCenDis()
             for i in range(len(self.edgeList)):  #for each edge
-                self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeCurvature(self.tetrahedralist)  #finds edge curvature
-                self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].calculateEdgeLengthStar(self.tetrahedralist)
+                edge1 = self.edgeList[i][0]
+                edge2 = self.edgeList[i][1]
+                self.edgetable[edge1][edge2].calculateEdgeCurvature(self.tetrahedralist)  #finds edge curvature
+                self.edgetable[edge1][edge2].calculateEdgeLengthStar(self.tetrahedralist)
             self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)
             self.LEHR = self.findLEHR(self.edgeList,self.edgetable)  #finds LEHR
             #self.showEdgeTable(self.edgetable)
@@ -517,9 +558,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 class metric:
     def calLEHR(self,convar):
         self.vertexCurvatureList = []
-        edgeList = copy.deepcopy(self.background.edgeList)
+        edgeList = self.background.edgeList
         edgeTable = self.setEdgeLengths(convar)
-        tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
+        self.edgeTable = edgeTable
+        tetrahedraList = self.background.tetrahedralist
         self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
         if self.good == True:
             for i in range(len(tetrahedraList)):
@@ -531,10 +573,13 @@ class metric:
             result = self.findLEHR(edgeList,edgeTable)
             self.LEHR = result
             self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+            self.isLEinstein = self.checkLEinstein(edgeTable,edgeList)
         else:
             result = 1000
 
         return result
+
+
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
             LCSC = True
@@ -542,15 +587,33 @@ class metric:
             for i in range(self.background.vertexNumber+1):
                 listOfLengths.append([0])
             for i in range(len(self.background.edgeList)):
-                listOfLengths[edgeList[i][0]].append(tableOfEdges[edgeList[i][0]][edgeList[i][1]].edgelength)
-                listOfLengths[edgeList[i][1]].append(tableOfEdges[edgeList[i][0]][edgeList[i][1]].edgelength)
+                edgeSpot1 = edgeList[i][0]
+                edgeSpot2 = edgeList[i][1]
+                lengths = tableOfEdges[edgeSpot1][edgeSpot2].edgelength
+                listOfLengths[edgeSpot1].append(lengths)
+                listOfLengths[edgeSpot2].append(lengths)
            # for i in range(self.vertexNumber):
            #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
             for i in range(1,self.background.vertexNumber+1):
                 if math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * sum(listOfLengths[i])/2)) > (error):
                     #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
                     LCSC = False
+                    break
             return LCSC
+
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
+        LEinstein = True
+        for i in range(len(self.background.edgeList)):
+                edgeSpot1 = edgeList[i][0]
+                edgeSpot2 = edgeList[i][1]
+        for i in range(len(edgeList)):
+            curvature=tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature
+            LEHRl=tableOfEdges[edgeSpot1][edgeSpot2].edgelength
+            LEHRl=LEHRl*self.LEHR
+            if math.fabs(curvature-LEHRl)> error:
+                LEinstein= False
+        return LEinstein
+
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
@@ -559,6 +622,7 @@ class metric:
         self.minima = res.x
         return res
 
+    #not optimized
     def grad(self,convar):
         Grad = []
         self.calLEHR(convar)
@@ -570,6 +634,7 @@ class metric:
                 Grad.append(temp)
         return numpy.array(Grad)
 
+    #not optimized, or any hessian related functions
     def hess(self, convar):
         self.vertexCurvatureList = []
         edgeList = copy.deepcopy(self.background.edgeList)
@@ -649,14 +714,17 @@ class metric:
                 if legal == False:
                     #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
                     everIllegal = True
+                    break  #comment this out if print commands are used
             return everIllegal
 
     def findLEHR(self,listOfEdges,tableOfEdges):
             listOfLengths = []
             listOfCurvatures = []
             for i in range(len(listOfEdges)):
-                listOfLengths.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgelength)
-                listOfCurvatures.append(tableOfEdges[listOfEdges[i][0]][listOfEdges[i][1]].edgecurvature)
+                edgeSpot1 = listOfEdges[i][0]
+                edgeSpot2 = listOfEdges[i][1]
+                listOfLengths.append(tableOfEdges[edgeSpot1][edgeSpot2].edgelength)
+                listOfCurvatures.append(tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature)
             return sum(listOfCurvatures)/sum(listOfLengths)
 
     def calculateVertexCurvature(self,vertex,tableOfEdges):
@@ -674,10 +742,12 @@ class metric:
         for i in range(len(edgeLengthTable)):
             for j in range(len(edgeLengthTable[i])):
                 if(edgeLengthTable[i][j]!=0):
-                    edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*edgeLengthTable[i][j].edgelength
-                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength/2
-                    self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+edgeLengthTable[i][j].edgelength/2
-                    self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength/2
+                    length = edgeLengthTable[i][j].edgelength
+                    lengthOverTwo = length/2
+                    edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*length
+                    self.totalEdgeLength = self.totalEdgeLength + length/2
+                    self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+lengthOverTwo
+                    self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+lengthOverTwo
         return edgeLengthTable
 
     def getEdgeStarOverEdgeSums(self,tableOfEdges,numberOfVertices):
@@ -700,8 +770,10 @@ class metric:
         self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         self.vertexCurvatureList = [0]
         self.isLCSC = False
+        self.isLEinstein = False
         self.good = True
-        self.LEHR = self.calLEHR(convar)
+        self.LEHR = 1000
+        self.edgeTable = []
         self.minima = []
 
 
@@ -757,30 +829,26 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     results = []
     failures = []
     times = []
+    lengths = []
     working = True
-    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC"])
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein"])
+    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein","numberRestarts"])
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
+    lengths.append(["Edges"])
     startAll = time.time()
     for k in range(numberBackgrounds):
         startBackground = time.time()
-        c1 = random.random()*10-5
-        c2 = random.random()*10-5
-        c3 = random.random()*10-5
-        c4 = random.random()*10-5
-        c5 = random.random()*10-5
+        c1 = random.random()*4-2
+        c2 = random.random()*4-2
+        c3 = random.random()*4-2
+        c4 = random.random()*4-2
+        c5 = random.random()*4-2
         # c1=0
         # c2=0
         # c3=0
         # c4=0
         # c5=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>10):
-            c1 = random.random()
-            c2 = random.random()
-            c3 = random.random()
-            c4 = random.random()
-            c5 = random.random()
         for j in range(restarts):
             startModuli = time.time()
             working = True
@@ -790,11 +858,11 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             while(happyConVar == False):
                 conVar = []
                 while happyBackground == False:
-                    c1 = random.random()
-                    c2 = random.random()
-                    c3 = random.random()
-                    c4 = random.random()
-                    c5 = random.random()
+                    c1 = random.random()*.5
+                    c2 = random.random()*.5
+                    c3 = random.random()*.5
+                    c4 = random.random()*.5
+                    c5 = random.random()*.5
                     happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
                 endModuli = time.time()
                 for i in range(numberVertices):
@@ -802,8 +870,6 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                     #conVar.append(0)
                     #sets random conformal variations
                     conVar.append(random.random())
-                orignalConVar = []
-                orignalConVar = copy.deepcopy((conVar))
                 test = metric(backgroundfile,triangulation,conVar)
                 happyConVar = test.good
             endConVar = time.time()
@@ -813,18 +879,24 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             conVar = temp.x
             working = test.isLCSC
             if working == True:
-                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
+                listOfLengths = []
+                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
+                for i in range(len(test.edgeTable)):
+                    for j in range(len(test.edgeTable)):
+                        if test.edgeTable[i][j] != 0:
+                            listOfLengths.append(test.edgeTable[i][j].edgelength)
+                lengths.append(listOfLengths)
                 break
         if working == False:
-            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,restarts])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,restarts])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
             print(temp)
     endAll = time.time()
     print(endAll-startAll)
-    return [results,failures,times]
+    return [results,failures,times,lengths]
 
 def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
@@ -835,13 +907,12 @@ def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     else:
         return True
 
-
 def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=5
+    numberOfBackgrounds=100
     numberRestarts = 5
     #seed=4741252
     #seed=263594
@@ -869,6 +940,12 @@ def main():
             notfoundResultsFile.write(str(results[1][i][j])+" ")
         notfoundResultsFile.write("\n")
     notfoundResultsFile.close()
+    lengthsFile = open("foundLengths.txt","w")
+    for i in range(1,len(results[3])):
+        for j in range(len(results[3][i])):
+            lengthsFile.write(str(results[3][i][j])+" ")
+        lengthsFile.write("\n")
+    lengthsFile.close()
     timeFile = open("timeInformation.txt","w")
     for i in range(1,len(results[2])):
         for j in range(len(results[2][i])):
@@ -880,4 +957,5 @@ def main():
     timeFile.close()
     notfoundResultsFile.close()
 
-main()
+#main()
+cProfile.run('main()')
