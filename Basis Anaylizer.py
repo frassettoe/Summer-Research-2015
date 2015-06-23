@@ -1,6 +1,6 @@
 __author__ = 'Owner'
 
-
+# uncomment all lines with 333 in them to get hessian working
 
 #tp://www.ripon.edu/wp-content/uploads/2012/10/doubletetra.pdf
 #10/16/14 Michael: Added advancedCheckLegalTetrahedra function for checking legal tetrahedron and used it main, made minor change checkLegalTetrahedron
@@ -103,7 +103,7 @@ class face:
         edge2 = self.edgeLength[1]
         edge3 = self.edgeLength[2]
         self.angleList = [math.acos(self.getAngle(edge1,edge2,edge3)),math.acos(self.getAngle(edge2,edge1,edge3)),math.acos(self.getAngle(edge3,edge2,edge1))]
-        self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]
+        #self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]   #333 used in hessian
 
 
 class Tetrahedron:
@@ -143,13 +143,27 @@ class Tetrahedron:
         self.faceList[1] = face(tableOfEdges,self.vertex1,self.vertex3,self.vertex4)
         self.faceList[2] = face(tableOfEdges,self.vertex1,self.vertex2,self.vertex4)
         self.faceList[3] = face(tableOfEdges,self.vertex1,self.vertex2,self.vertex3)
-
-
+    def checkTriangles(self,edge1,edge2,edge3,edge4,edge5,edge6):
+        legalTriangle = True
+        if edge1+edge2+edge4-2*max(edge1,edge2,edge4) <= 0:
+            legalTriangle=False
+        if edge1+edge3+edge5-2*max(edge1,edge3,edge5) <= 0:
+            legalTriangle=False
+        if edge2+edge3+edge6-2*max(edge2,edge3,edge6) <= 0:
+            legalTriangle=False
+        if edge4+edge5+edge6-2*max(edge4,edge5,edge6) <= 0:
+            legalTriangle=False
+        return legalTriangle
+    checkLCalls = 0
+    TetBreak = 0
+    TriBreak = 0
+    BothBreak = 0
     #input: Table of edge objects
     #output: finalDecision, a boolean that tells whether legality conditions have been met
     #author: MELT, 10/13/2014
     #change log: Michael 10/16/14
     def checkLegalTetrahedron(self,tableOfEdges):
+        Tetrahedron.checkLCalls = Tetrahedron.checkLCalls+1
         legalTriangle=True
         edge1=tableOfEdges[self.vertex1][self.vertex2].edgelength
         edge2=tableOfEdges[self.vertex1][self.vertex3].edgelength
@@ -157,22 +171,21 @@ class Tetrahedron:
         edge4=tableOfEdges[self.vertex2][self.vertex3].edgelength
         edge5=tableOfEdges[self.vertex2][self.vertex4].edgelength
         edge6=tableOfEdges[self.vertex3][self.vertex4].edgelength
-        if edge1+edge2+edge4-2*max(edge1,edge2,edge4) <= 0:
-            legalTriangle=False
-            return False
-        if edge1+edge3+edge5-2*max(edge1,edge3,edge5) <= 0:
-            legalTriangle=False
-            return False
-        if edge2+edge3+edge6-2*max(edge2,edge3,edge6) <= 0:
-            legalTriangle=False
-            return False
-        if edge4+edge5+edge6-2*max(edge4,edge5,edge6) <= 0:
-            legalTriangle=False
-            return False
-        legalTetrahedron=True
         det = (-2)*(edge1**4)*(edge6**2)-(2)*(edge1**2)*(edge2**2)*(edge4**2)+(2)*(edge1**2)*(edge2**2)*(edge5**2)+(2)*(edge1**2)*(edge2**2)*(edge6**2)+(2)*(edge1**2)*(edge3**2)*(edge4**2)-(2)*(edge1**2)*(edge3**2)*(edge5**2)+(2)*(edge1**2)*(edge3**2)*(edge6**2)+(2)*(edge1**2)*(edge4**2)*(edge6**2)+(2)*(edge1**2)*(edge5**2)*(edge6**2)-(2)*(edge1**2)*(edge6**4)-(2)*(edge2**4)*(edge5**2)+(2)*(edge2**2)*(edge3**2)*(edge4**2)+(2)*(edge2**2)*(edge3**2)*(edge5**2)-(2)*(edge2**2)*(edge3**2)*(edge6**2)+(2)*(edge2**2)*(edge4**2)*(edge5**2)-(2)*(edge2**2)*(edge5**4)+(2)*(edge2**2)*(edge5**2)*(edge6**2)-(2)*(edge3**4)*(edge4**2)-(2)*(edge3**2)*(edge4**4)+(2)*(edge3**2)*(edge4**2)*(edge5**2)+(2)*(edge3**2)*(edge4**2)*(edge6**2)-(2)*(edge4**2)*(edge5**2)*(edge6**2)
         if det<=0:
             legalTetrahedron=False
+            return False
+        legalTriangle = self.checkTriangles(edge1,edge2,edge3,edge4,edge5,edge6)
+        legalTetrahedron=True
+        # if legalTetrahedron == False and legalTriangle == False:
+        #     Tetrahedron.BothBreak = Tetrahedron.BothBreak+1
+        # elif legalTetrahedron == False:
+        #     Tetrahedron.TetBreak = Tetrahedron.TetBreak+1
+        # elif legalTriangle == False:
+        #     Tetrahedron.TriBreak = Tetrahedron.TriBreak+1
+        # print("BOT: "+str(Tetrahedron.BothBreak))
+        # print("TET: "+str(Tetrahedron.TetBreak))
+        # print("DEL: "+str(Tetrahedron.TriBreak))
         finalDecision=legalTetrahedron and legalTriangle
         return finalDecision
     # 10/16/14; Michael; change return(finalDecision) to return finalDecision
@@ -412,6 +425,8 @@ class backgroundMetricClass: #need to change so conformal variations are always 
                 #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
                 everIllegal = True
                 break  #delete statement if uncommenting print command
+        # if everIllegal == True:
+        #     print(":(")
         return everIllegal
     #
     #input: table of edges
@@ -520,6 +535,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         self.vertexNumber = 0
         self.LEHR = 10000
         self.LCSC = False
+        self.LEinstein = False
         self.vertexCurvatureList = []
         self.sumOfEdgesAtVertex = []
         readFile = open(manifoldFile)
@@ -543,22 +559,20 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         if illegalTetrahedrons == True:  #if illegal found, further calculations cannot be done and program stops
             self.good = False
         else:
-            for i in range(len(self.tetrahedralist)):
-                self.tetrahedralist[i].initalizeTriangles(self.edgetable)  #finds information about triangles within tetrahedra (used in hessian calculations only?)
+         #   for i in range(len(self.tetrahedralist)): #333 hessian
+         #       self.tetrahedralist[i].initalizeTriangles(self.edgetable)  #finds information about triangles within tetrahedra (333 used in hessian calculations only)
             self.totalLength = self.findTotalEdgeLength(self.edgetable)  #gets total edge length of all edges in metric
             for i in range(len(self.tetrahedralist)):  #for each tetrahedra
                 self.tetrahedralist[i].calculateDihedralAngles(self.edgetable)  #finds dihedral angles
-                self.tetrahedralist[i].getTetCenDis()
+                #self.tetrahedralist[i].getTetCenDis()  #333 for hessian
             for i in range(len(self.edgeList)):  #for each edge
                 edge1 = self.edgeList[i][0]
                 edge2 = self.edgeList[i][1]
                 self.edgetable[edge1][edge2].calculateEdgeCurvature(self.tetrahedralist)  #finds edge curvature
-                self.edgetable[edge1][edge2].calculateEdgeLengthStar(self.tetrahedralist)
-            self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)
+                #self.edgetable[edge1][edge2].calculateEdgeLengthStar(self.tetrahedralist)  #333 used in hessian
+           # self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)  #333 used in hessian
             self.LEHR = self.findLEHR(self.edgeList,self.edgetable)  #finds LEHR
             #self.showEdgeTable(self.edgetable)
-            for i in range(self.vertexNumber):
-                self.vertexCurvatureList.append(self.calculateVertexCurvature(i+1,self.edgetable))  #creates list of vertex curvatures (used for LCSC check?)
             self.LCSC = self.checkLCSC(self.edgetable)  #checks if LCSC and L-Einstein met
             self.LEinstein = self.checkLEinstein()
             self.good = True
@@ -566,25 +580,33 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
 class metric:
     def calLEHR(self,convar):
-        self.vertexCurvatureList = []
-        edgeList = self.background.edgeList
-        edgeTable = self.setEdgeLengths(convar)
-        self.edgeTable = edgeTable
-        tetrahedraList = self.background.tetrahedralist
-        self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
-        if self.good == True:
-            for i in range(len(tetrahedraList)):
-                tetrahedraList[i].calculateDihedralAngles(edgeTable)
-            for i in range(len(edgeList)):
-                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
-            for i in range(1,self.background.vertexNumber+1):
-                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
-            result = self.findLEHR(edgeList,edgeTable)
-            self.LEHR = result
-            self.isLCSC = self.checkLCSC(edgeTable,edgeList)
-            self.isLEinstein = self.checkLEinstein(edgeTable,edgeList)
+        if any(convar) != 0:
+            #print("Not all Zero")
+            self.vertexCurvatureList = []
+            edgeList = self.background.edgeList
+            edgeTable = self.setEdgeLengths(convar)
+            self.edgeTable = edgeTable
+            tetrahedraList = self.background.tetrahedralist
+            self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+            if self.good == True:
+                for i in range(len(tetrahedraList)):
+                    tetrahedraList[i].calculateDihedralAngles(edgeTable)
+                for i in range(len(edgeList)):
+                    edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+                for i in range(1,self.background.vertexNumber+1):
+                    self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
+                result = self.findLEHR(edgeList,edgeTable)
+                self.LEHR = result
+                self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+                self.isLEinstein = self.checkLEinstein(edgeTable,edgeList)
+            else:
+                result = 1000
         else:
-            result = 1000
+            #print("All Zero")
+            self.LEHR = self.background.LEHR
+            result = self.LEHR
+            self.isLCSC = self.background.LCSC
+            self.isLEinstein = self.background.LEinstein
 
         return result
 
@@ -840,69 +862,79 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     times = []
     lengths = []
     working = True
-    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein"])
-    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein","numberRestarts"])
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
+    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein"])
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
     lengths.append(["Edges"])
     startAll = time.time()
     for k in range(numberBackgrounds):
         startBackground = time.time()
-        c1 = random.random()*4-2
-        c2 = random.random()*4-2
-        c3 = random.random()*4-2
-        c4 = random.random()*4-2
-        c5 = random.random()*4-2
-        # c1=0
-        # c2=0
-        # c3=0
-        # c4=0
-        # c5=0
+        happyBackground = [False,0]
+        startModuli = time.time()
+        working = True
+        happyConVar = False
+        startConar = time.time()
+        while happyBackground[0] == False:
+            c1 = random.random()*.5
+            c2 = random.random()*.5
+            c3 = random.random()*.5
+            c4 = random.random()*.5
+            c5 = random.random()*.5
+            happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
+        endModuli = time.time()
+        conVar = [0]*numberVertices
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        for j in range(restarts):
-            startModuli = time.time()
-            working = True
-            happyConVar = False
-            happyBackground = False
-            startConar = time.time()
-            while(happyConVar == False):
-                conVar = []
-                while happyBackground == False:
-                    c1 = random.random()*.5
-                    c2 = random.random()*.5
-                    c3 = random.random()*.5
-                    c4 = random.random()*.5
-                    c5 = random.random()*.5
-                    happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
-                endModuli = time.time()
-                for i in range(numberVertices):
-                    #sets conformal variations to 0
-                    #conVar.append(0)
-                    #sets random conformal variations
-                    conVar.append(random.random())
-                test = metric(backgroundfile,triangulation,conVar)
-                happyConVar = test.good
-            endConVar = time.time()
-            startOpt = time.time()
-            temp = test.optimizeLEHR(conVar)
-            endOpt = time.time()
-            conVar = temp.x
-            working = test.isLCSC
-            if working == True:
-                listOfLengths = []
-                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
-                endBackground = time.time()
-                times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
-                for i in range(len(test.edgeTable)):
-                    for j in range(len(test.edgeTable)):
-                        if test.edgeTable[i][j] != 0:
-                            listOfLengths.append(test.edgeTable[i][j].edgelength)
-                lengths.append(listOfLengths)
-                break
+        startOpt = time.time()
+        #add optimize
+        test = happyBackground[1]
+        temp = test.optimizeLEHR(conVar)
+        conVar = temp.x
+        endOpt = time.time()
+        working = test.isLCSC
+        if working == True:
+            listOfLengths = []
+            results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,-1])
+            endBackground = time.time()
+            times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
+            for i in range(len(test.edgeTable)):
+                for j in range(len(test.edgeTable)):
+                    if test.edgeTable[i][j] != 0:
+                        listOfLengths.append(test.edgeTable[i][j].edgelength)
+            lengths.append(listOfLengths)
+        else:
+            for j in range(restarts):
+                while(happyConVar == False):
+                    conVar = []
+                    for i in range(numberVertices):
+                        #sets conformal variations to 0
+                        #conVar.append(0)
+                        #sets random conformal variations
+                        conVar.append(random.random())
+                    test = metric(backgroundfile,triangulation,conVar)
+                    happyConVar = test.good
+                endConVar = time.time()
+                startOpt = time.time()
+                temp = test.optimizeLEHR(conVar)
+                test.calLEHR(conVar)
+                endOpt = time.time()
+                conVar = temp.x
+                working = test.isLCSC
+                if working == True:
+                    listOfLengths = []
+                    results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,j])
+                    endBackground = time.time()
+                    times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
+                    for i in range(len(test.edgeTable)):
+                        for j in range(len(test.edgeTable)):
+                            if test.edgeTable[i][j] != 0:
+                                listOfLengths.append(test.edgeTable[i][j].edgelength)
+                    lengths.append(listOfLengths)
+                    break
         if working == False:
-            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,restarts])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
-            print(temp)
+            #print(temp)
     endAll = time.time()
     print(endAll-startAll)
     return [results,failures,times,lengths]
@@ -912,16 +944,16 @@ def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     test = metric(background,triagulation,[0,0,0,0,0])
     LEHR = test.calLEHR([0,0,0,0,0])
     if LEHR == 1000:
-        return False
+        return [False,0]
     else:
-        return True
+        return [True,test]
 
 def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=100
+    numberOfBackgrounds=1000
     numberRestarts = 5
     #seed=4741252
     #seed=263594
