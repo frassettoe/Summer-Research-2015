@@ -165,6 +165,7 @@ class Tetrahedron:
     def checkLegalTetrahedron(self,tableOfEdges):
         Tetrahedron.checkLCalls = Tetrahedron.checkLCalls+1
         legalTriangle=True
+        legalTetrahedron=True
         edge1=tableOfEdges[self.vertex1][self.vertex2].edgelength
         edge2=tableOfEdges[self.vertex1][self.vertex3].edgelength
         edge3=tableOfEdges[self.vertex1][self.vertex4].edgelength
@@ -176,7 +177,6 @@ class Tetrahedron:
             legalTetrahedron=False
             return False
         legalTriangle = self.checkTriangles(edge1,edge2,edge3,edge4,edge5,edge6)
-        legalTetrahedron=True
         # if legalTetrahedron == False and legalTriangle == False:
         #     Tetrahedron.BothBreak = Tetrahedron.BothBreak+1
         # elif legalTetrahedron == False:
@@ -607,6 +607,7 @@ class metric:
             result = self.LEHR
             self.isLCSC = self.background.LCSC
             self.isLEinstein = self.background.LEinstein
+            self.good = self.background.good
 
         return result
 
@@ -856,6 +857,16 @@ def modifyBackground(c1,c2,c3,c4,c5,filename):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
     backgroundMetric.close()
 
+def generateConvar(size,numberSame):
+    conVar = []
+    for i in range(size-numberSame):
+        conVar.append(random.random()*2-1)
+    temp = random.random()*2-1
+    for i in range(numberSame):
+        conVar.append(temp)
+    random.shuffle(conVar)
+    return conVar
+
 def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
     failures = []
@@ -880,7 +891,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             c3 = random.random()*.5
             c4 = random.random()*.5
             c5 = random.random()*.5
-            happyBackground = legalBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt",triangulation)
+            happyBackground = legalBackground(c1,c2,c3,c4,c5, backgroundfile,triangulation)
         endModuli = time.time()
         conVar = [0]*numberVertices
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
@@ -903,14 +914,13 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
             lengths.append(listOfLengths)
         else:
             for j in range(restarts):
+                happyConVar = False
+                same = j
                 while(happyConVar == False):
-                    conVar = []
-                    for i in range(numberVertices):
-                        #sets conformal variations to 0
-                        #conVar.append(0)
-                        #sets random conformal variations
-                        conVar.append(random.random())
+                    same = same+1
+                    conVar = generateConvar(numberVertices,same%(numberVertices+1))
                     test = metric(backgroundfile,triangulation,conVar)
+                    test.calLEHR(conVar)
                     happyConVar = test.good
                 endConVar = time.time()
                 startOpt = time.time()
@@ -918,6 +928,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 test.calLEHR(conVar)
                 endOpt = time.time()
                 conVar = temp.x
+                test.calLEHR(conVar)
                 working = test.isLCSC
                 if working == True:
                     listOfLengths = []
@@ -943,7 +954,7 @@ def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
     test = metric(background,triagulation,[0,0,0,0,0])
     LEHR = test.calLEHR([0,0,0,0,0])
-    if LEHR == 1000:
+    if LEHR >= 1000:
         return [False,0]
     else:
         return [True,test]
@@ -953,7 +964,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=1000
+    numberOfBackgrounds=100
     numberRestarts = 5
     #seed=4741252
     #seed=263594
@@ -998,5 +1009,5 @@ def main():
     timeFile.close()
     notfoundResultsFile.close()
 
-#main()
-cProfile.run('main()')
+main()
+#cProfile.run('main()')
