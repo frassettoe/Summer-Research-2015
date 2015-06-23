@@ -159,12 +159,16 @@ class Tetrahedron:
         edge6=tableOfEdges[self.vertex3][self.vertex4].edgelength
         if edge1+edge2+edge4-2*max(edge1,edge2,edge4) <= 0:
             legalTriangle=False
+            return False
         if edge1+edge3+edge5-2*max(edge1,edge3,edge5) <= 0:
             legalTriangle=False
+            return False
         if edge2+edge3+edge6-2*max(edge2,edge3,edge6) <= 0:
             legalTriangle=False
+            return False
         if edge4+edge5+edge6-2*max(edge4,edge5,edge6) <= 0:
             legalTriangle=False
+            return False
         legalTetrahedron=True
         det = (-2)*(edge1**4)*(edge6**2)-(2)*(edge1**2)*(edge2**2)*(edge4**2)+(2)*(edge1**2)*(edge2**2)*(edge5**2)+(2)*(edge1**2)*(edge2**2)*(edge6**2)+(2)*(edge1**2)*(edge3**2)*(edge4**2)-(2)*(edge1**2)*(edge3**2)*(edge5**2)+(2)*(edge1**2)*(edge3**2)*(edge6**2)+(2)*(edge1**2)*(edge4**2)*(edge6**2)+(2)*(edge1**2)*(edge5**2)*(edge6**2)-(2)*(edge1**2)*(edge6**4)-(2)*(edge2**4)*(edge5**2)+(2)*(edge2**2)*(edge3**2)*(edge4**2)+(2)*(edge2**2)*(edge3**2)*(edge5**2)-(2)*(edge2**2)*(edge3**2)*(edge6**2)+(2)*(edge2**2)*(edge4**2)*(edge5**2)-(2)*(edge2**2)*(edge5**4)+(2)*(edge2**2)*(edge5**2)*(edge6**2)-(2)*(edge3**4)*(edge4**2)-(2)*(edge3**2)*(edge4**4)+(2)*(edge3**2)*(edge4**2)*(edge5**2)+(2)*(edge3**2)*(edge4**2)*(edge6**2)-(2)*(edge4**2)*(edge5**2)*(edge6**2)
         if det<=0:
@@ -227,12 +231,15 @@ class Tetrahedron:
         temp = temp/math.sin(math.acos(self.getAngle(Ejk,Eij,Eik)))
         temp = temp/math.sin(math.acos(self.getAngle(Ejl,Eij,Eil)))
         return temp
+    #Should find dihedral angle of edge ij
+    def calDiAngle2(self,Ailk,Aijk,Aijl):  #Used to find a single dihedral angle
+        temp = Ailk-Aijk*Aijl
+        temp = temp/math.sin(math.acos(Aijk))
+        temp = temp/math.sin(math.acos(Aijl))
+        return temp
 
         #temp = angle oposite Edge kl-angle oposite edge kj * angle opposite edge jl
     #
-
-    def fillAngleTable(self):
-        temp = []
 
     #input: table of edge objects
     #output: none, finds the dihedral angle at each edge and adds it to the dihedralanglelist
@@ -250,27 +257,29 @@ class Tetrahedron:
         angleTable[0] = self.getAngle(edge12,edge23,edge13)
         angleTable[1] = self.getAngle(edge23,edge12,edge13)
         angleTable[2] = self.getAngle(edge13,edge23,edge12)
-        angleTable[3] = self.getAngle(edge13,edge14,edge34)
+        angleTable[3] = 0#self.getAngle(edge13,edge14,edge34)
         angleTable[4] = self.getAngle(edge14,edge13,edge34)
         angleTable[5] = self.getAngle(edge34,edge14,edge13)
-        angleTable[6] = self.getAngle(edge12,edge14,edge24)
+        angleTable[6] = 0#self.getAngle(edge12,edge14,edge24)
         angleTable[7] = self.getAngle(edge14,edge12,edge24)
         angleTable[8] = self.getAngle(edge24,edge14,edge12)
         angleTable[9] = self.getAngle(edge24,edge34,edge23)
         angleTable[10] = self.getAngle(edge34,edge24,edge23)
-        angleTable[11] = self.getAngle(edge23,edge34,edge24)
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge12,edge13,edge14,edge23,edge24,edge34)))  #finds each dihedral angle
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge13,edge12,edge14,edge23,edge34,edge24)))
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge14,edge13,edge12,edge34,edge24,edge23)))
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge23,edge12,edge24,edge13,edge34,edge14)))
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge24,edge12,edge23,edge14,edge34,edge13)))
-        self.dihedralanglelist.append(math.acos(self.calDiAngle(edge34,edge13,edge23,edge14,edge24,edge12)))
+        angleTable[11] = -1#self.getAngle(edge23,edge34,edge24)
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[5],angleTable[1],angleTable[8])))  #finds each dihedral angle
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[8],angleTable[5],angleTable[1])))
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[1],angleTable[8],angleTable[5])))
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[7],angleTable[2],angleTable[10])))
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[2],angleTable[10],angleTable[7])))
+        self.dihedralanglelist.append(math.acos(self.calDiAngle2(angleTable[0],angleTable[9],angleTable[4])))
         # print(self.edgesintetrahedron[0],self.dihedralanglelist[0],self.vertex1,self.vertex2)  #prints dihedral angles, used only for checking for errors
         # print(self.edgesintetrahedron[1],self.dihedralanglelist[1],self.vertex1,self.vertex3)
         # print(self.edgesintetrahedron[2],self.dihedralanglelist[2],self.vertex1,self.vertex4)
         # print(self.edgesintetrahedron[3],self.dihedralanglelist[3],self.vertex2,self.vertex3)
         # print(self.edgesintetrahedron[4],self.dihedralanglelist[4],self.vertex2,self.vertex4)
         # print(self.edgesintetrahedron[5],self.dihedralanglelist[5],self.vertex3,self.vertex4)
+        # for i in range(len(self.dihedralanglelist)):
+        #     print(self.dihedralanglelist[i])
     #
 
 
