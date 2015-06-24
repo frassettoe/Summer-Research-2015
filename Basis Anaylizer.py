@@ -858,12 +858,15 @@ def modifyBackground(c1,c2,c3,c4,c5,filename):
     backgroundMetric.close()
 
 def generateConvar(size,numberSame):
+    numberSame = numberSame%(size+1)
     conVar = []
+    temp = []
     for i in range(size-numberSame):
         conVar.append(random.random()*2-1)
     temp = random.random()*2-1
     for i in range(numberSame):
         conVar.append(temp)
+    conVar[0] = random.random()
     random.shuffle(conVar)
     return conVar
 
@@ -886,11 +889,11 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         happyConVar = False
         startConar = time.time()
         while happyBackground[0] == False:
-            c1 = random.random()*.5
-            c2 = random.random()*.5
-            c3 = random.random()*.5
-            c4 = random.random()*.5
-            c5 = random.random()*.5
+            c1 = random.random()*.2
+            c2 = random.random()*.2
+            c3 = random.random()*.2
+            c4 = random.random()*.2
+            c5 = random.random()*.2
             happyBackground = legalBackground(c1,c2,c3,c4,c5, backgroundfile,triangulation)
         endModuli = time.time()
         conVar = [0]*numberVertices
@@ -917,8 +920,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 happyConVar = False
                 same = j
                 while(happyConVar == False):
-                    same = same+1
-                    conVar = generateConvar(numberVertices,same%(numberVertices+1))
+                    conVar = generateConvar(numberVertices,same)
                     test = metric(backgroundfile,triangulation,conVar)
                     test.calLEHR(conVar)
                     happyConVar = test.good
@@ -964,7 +966,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=100
+    numberOfBackgrounds=1000
     numberRestarts = 5
     #seed=4741252
     #seed=263594
