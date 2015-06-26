@@ -1,6 +1,7 @@
 #10/16/14 Michael: Added advancedCheckLegalTetrahedra function for checking legal tetrahedron and used it main, made minor change checkLegalTetrahedron
 import math
 import numpy as np
+import copy
 
 edgetable = []#A list of lists of edges such that edge x,y is stored in edgetable[x][y]
 tetrahedralist = []#A list of tetrahedron objects
@@ -215,8 +216,80 @@ def findSpanTree(spanM,size):
                 if spanM[focus][i] == 1:
                     explore.insert(0,[focus,i])
     print(sT)
+    return sT
 
+def createOddCyle(sT,graph):
+    oddCycle = False
+    legalEdge = False
+    size = len(graph)
+    count = 0
+    while oddCycle == False:
+        while legalEdge == False:
+            j = count%size
+            i = math.floor(count/size)
+            if sT[i][j] == 0 and graph[i][j] == 1:
+                legalEdge = True
+            count = count+1
+        print("Add edge")
+        sT[i][j] = 1
+        sT[j][i] = 1
+        print("Check cycles")
+        oddCycle = findCycleOdd(sT,i,j)
+        if(oddCycle == False):
+            sT[i][j] = 0
+            sT[j][i] = 0
+    return sT
 
+def findCycleOdd(tree,start,end):
+    print("Build Storage")
+    found = False
+    edgesUsed = [[0 for i in range(len(tree))] for j in range(len(tree))]
+    edgesUsed[start][end] = 1
+    edgesUsed[end][start] = 1
+    print("Start Search")
+    cyle = searchForCycle(start,end,tree,edgesUsed,False,True)
+    print("check if cycle is odd")
+    if len(cyle)%2 == 1:
+        found = True
+    print("Return if found or not")
+    return found
+
+def searchForCycle(start,end,tree,explored,wantEven,startEven = True):
+    cycleList = [-1]*len(tree)
+    cycleList[start] = end
+    found = DFS(start,tree,explored,end,cycleList,wantEven,startEven)
+    if found == True:
+        cycle = []
+        cycle.insert(0,end)
+        cycle.insert(0,cycleList[end])
+        while(cycle[0] != start and len(cycle) <= len(tree)):
+            cycle.insert(0,cycleList[cycle[0]])
+        if cycle[0] != start:
+            cycle = [-1]
+            found = False
+    else:
+        cycle = [-1]
+    if found == False:
+        print("No cycle present")
+    return cycle
+
+def DFS(start,tree,explored,end,cycleList=[],wantEven = True,even = False):
+    good = False
+    for i in range(len(tree[start])):
+        if tree[start][i] == 1 and explored[start][i] != 1 and i == end and even == wantEven:
+            cycleList[i] = start
+            good = True
+            break
+        elif tree[start][i] == 1 and explored[start][i] != 1 and i != end:
+            cycleList[i] = start
+            explored[start][i] = 1
+            explored[i][start] = 1
+            good = DFS(i,tree,explored,end ,cycleList,wantEven,not even)
+            explored[start][i] = 0
+            explored[i][start] = 0
+            if good == True:
+                break
+    return good
 #input: none
 #output: none, super-mega-function that does EVERYTHING! prints LEHR
 #author: METAL, 10/8/2014
@@ -260,12 +333,28 @@ def main():
     print(adjMatrix)
     print("Create spanning tree")
     spanTree = findSpanTree(adjMatrix,vertexNumber)
-    # print("Add edge to create odd cycle")
-    # print("look at dendroid")
-    # #repeate for each edge in dendroid
-    # print("add edge")
-    # print("find even cycle/two odd cycles")
-    # print("assign values")
+    print("Add edge to create odd cycle")
+    oddCycle = createOddCyle(spanTree,adjMatrix)
+    print(oddCycle)
+    print("look at dendroid")
+    dendroid = np.subtract(adjMatrix,oddCycle)
+    print(dendroid)
+    #repeate for each edge in dendroid
+    for i in range(len(dendroid)):
+        for j in range(len(dendroid)):
+            if dendroid[i][j] == 1 and j > i:
+                oddCycle[i][j] = 1
+                oddCycle[j][i] = 1
+                #awesome math stuff
+                explored = [[0 for i in range(len(spanTree))] for j in range(len(spanTree))]
+                explored[i][j] = 1
+                explored[j][i] = 1
+                cycle = searchForCycle(i,j,oddCycle,explored,True,True)
+                print(str(i)+str(cycle)+str(j))
+                oddCycle[i][j] = 0
+                oddCycle[j][i] = 0
+    print("find even cycle/two odd cycles")
+    print("assign values")
 
 
     createEdgeTable(vertexNumber)
