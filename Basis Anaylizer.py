@@ -190,6 +190,26 @@ class Tetrahedron:
         return finalDecision
     # 10/16/14; Michael; change return(finalDecision) to return finalDecision
 
+    #input: Table of edge objects
+    #output: volume of the terahedron
+    #author: Erin 6/29/2015
+    #change log:
+    def volumeOfTetrahedron(self,tableOfEdges):
+        edge1=tableOfEdges[self.vertex1][self.vertex2].edgelength
+        edge2=tableOfEdges[self.vertex1][self.vertex3].edgelength
+        edge3=tableOfEdges[self.vertex1][self.vertex4].edgelength
+        edge4=tableOfEdges[self.vertex2][self.vertex3].edgelength
+        edge5=tableOfEdges[self.vertex2][self.vertex4].edgelength
+        edge6=tableOfEdges[self.vertex3][self.vertex4].edgelength
+        det = (-2)*(edge1**4)*(edge6**2)-(2)*(edge1**2)*(edge2**2)*(edge4**2)+(2)*(edge1**2)*(edge2**2)*(edge5**2)+(2)*(edge1**2)*(edge2**2)*(edge6**2)+(2)*(edge1**2)*(edge3**2)*(edge4**2)-(2)*(edge1**2)*(edge3**2)*(edge5**2)+(2)*(edge1**2)*(edge3**2)*(edge6**2)+(2)*(edge1**2)*(edge4**2)*(edge6**2)+(2)*(edge1**2)*(edge5**2)*(edge6**2)-(2)*(edge1**2)*(edge6**4)-(2)*(edge2**4)*(edge5**2)+(2)*(edge2**2)*(edge3**2)*(edge4**2)+(2)*(edge2**2)*(edge3**2)*(edge5**2)-(2)*(edge2**2)*(edge3**2)*(edge6**2)+(2)*(edge2**2)*(edge4**2)*(edge5**2)-(2)*(edge2**2)*(edge5**4)+(2)*(edge2**2)*(edge5**2)*(edge6**2)-(2)*(edge3**4)*(edge4**2)-(2)*(edge3**2)*(edge4**4)+(2)*(edge3**2)*(edge4**2)*(edge5**2)+(2)*(edge3**2)*(edge4**2)*(edge6**2)-(2)*(edge4**2)*(edge5**2)*(edge6**2)
+        if det>0:
+            volume = math.sqrt(det/288)
+        else:
+            det=0
+            volume = math.sqrt(det/288)
+        return volume
+
+
     #input: c,a,b, which are edge lengths
     #output: temp, the cosine of the angle opposite of edge c
     #author: MELT, 10/9/2014
@@ -875,6 +895,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     failures = []
     times = []
     lengths = []
+    volumes = []
     working = True
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein"])
@@ -947,15 +968,25 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                             if test.edgeTable[i][j] != 0:
                                 listOfLengths.append(test.edgeTable[i][j].edgelength)
                     lengths.append(listOfLengths)
+                    # listOfVolumes = [] #uncomment block to get the volumes of metrics that find L-CSC
+                    # for i in range(len(test.background.tetrahedralist)):
+                    #     vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
+                    #     listOfVolumes.append(vol)
+                    # volumes.append(listOfVolumes)
                     break
         if working == False:
             failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
+            listOfVolumes = []
+            for i in range(len(test.background.tetrahedralist)):
+                vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
+                listOfVolumes.append(vol)
+            volumes.append(listOfVolumes)
             #print(temp)
     endAll = time.time()
     print(endAll-startAll)
-    return [results,failures,times,lengths]
+    return [results,failures,times,lengths,volumes]
 
 def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
@@ -971,7 +1002,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=1000
+    numberOfBackgrounds=10
     numberRestarts = 5
     #seed=4741252
     #seed=263594
@@ -1005,6 +1036,12 @@ def main():
             lengthsFile.write(str(results[3][i][j])+" ")
         lengthsFile.write("\n")
     lengthsFile.close()
+    volumeFile = open("NotFoundVolumes.txt","w")
+    for i in range(0,len(results[4])):
+        for j in range(len(results[4][i])):
+            volumeFile.write(str(results[4][i][j])+" ")
+        volumeFile.write("\n")
+    volumeFile.close()
     timeFile = open("timeInformation.txt","w")
     for i in range(1,len(results[2])):
         for j in range(len(results[2][i])):
