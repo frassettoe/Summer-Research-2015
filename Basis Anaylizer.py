@@ -888,12 +888,17 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         working = True
         happyConVar = False
         startConar = time.time()
-        while happyBackground[0] == False:
-            c1 = random.random()*.2
-            c2 = random.random()*.2
-            c3 = random.random()*.2
-            c4 = random.random()*.2
-            c5 = random.random()*.2
+        c1 = random.random()/2
+        c2 = random.random()/2
+        c3 = random.random()/2
+        c4 = random.random()/2
+        c5 = random.random()/2
+        while c1**2+c2**2+c3**2+c4**2+c5**2 > .3263**2 or happyBackground[0] == False:
+            c1 = random.random()/2
+            c2 = random.random()/2
+            c3 = random.random()/2
+            c4 = random.random()/2
+            c5 = random.random()/2
             happyBackground = legalBackground(c1,c2,c3,c4,c5, backgroundfile,triangulation)
         endModuli = time.time()
         conVar = [0]*numberVertices
