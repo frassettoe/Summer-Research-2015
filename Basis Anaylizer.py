@@ -1002,11 +1002,12 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=10
+    numberOfBackgrounds=1000
     numberRestarts = 5
     #seed=4741252
     #seed=263594
     seed=56932684
+    #seed=71293
     random.seed(seed)
     #seed=9865721
     triangulation='manifoldExample4.txt'
