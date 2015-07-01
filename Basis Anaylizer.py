@@ -1002,7 +1002,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=1000
+    numberOfBackgrounds=10
     numberRestarts = 5
     #seed=4741252
     #seed=263594
