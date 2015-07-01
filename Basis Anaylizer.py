@@ -896,6 +896,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     times = []
     lengths = []
     volumes = []
+    failedlengths =[]
     working = True
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein"])
@@ -914,7 +915,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         c3 = random.random()/2
         c4 = random.random()/2
         c5 = random.random()/2
-        while c1**2+c2**2+c3**2+c4**2+c5**2 > .3263**2 or happyBackground[0] == False:
+        while c1**2+c2**2+c3**2+c4**2+c5**2 > 1**2 or happyBackground[0] == False:
             c1 = random.random()/2
             c2 = random.random()/2
             c3 = random.random()/2
@@ -983,10 +984,16 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
                 listOfVolumes.append(vol)
             volumes.append(listOfVolumes)
+            listOfFailedLenghts = []
+            for i in range(len(test.edgeTable)):
+                for j in range(len(test.edgeTable)):
+                    if test.edgeTable[i][j] != 0:
+                        listOfFailedLenghts.append(test.edgeTable[i][j].edgelength)
+            failedlengths.append(listOfFailedLenghts)
             #print(temp)
     endAll = time.time()
     print(endAll-startAll)
-    return [results,failures,times,lengths,volumes]
+    return [results,failures,times,lengths,volumes,failedlengths]
 
 def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
     modifyBackground(c1,c2,c3,c4,c5,background)
@@ -1005,8 +1012,9 @@ def main():
     numberOfBackgrounds=10
     numberRestarts = 5
     #seed=4741252
+    seed = 32190
     #seed=263594
-    seed=56932684
+    #seed=56932684
     #seed=71293
     random.seed(seed)
     #seed=9865721
@@ -1043,6 +1051,12 @@ def main():
             volumeFile.write(str(results[4][i][j])+" ")
         volumeFile.write("\n")
     volumeFile.close()
+    notFoundLengthsFile = open("notFoundLengths.txt","w")
+    for i in range(1,len(results[5])):
+        for j in range(len(results[5][i])):
+            notFoundLengthsFile.write(str(results[5][i][j])+" ")
+        notFoundLengthsFile.write("\n")
+    notFoundLengthsFile.close()
     timeFile = open("timeInformation.txt","w")
     for i in range(1,len(results[2])):
         for j in range(len(results[2][i])):
