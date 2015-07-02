@@ -622,7 +622,7 @@ class metric:
             else:
                 result = 1000
         else:
-            #print("All Zero")
+            print("All Zero")
             self.LEHR = self.background.LEHR
             result = self.LEHR
             self.isLCSC = self.background.LCSC
@@ -653,7 +653,7 @@ class metric:
                     break
             return LCSC
 
-    def checkLEinstein(self,tableOfEdges,edgeList,error=.00003):
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.0000001):
         LEinstein = True
         for i in range(len(self.background.edgeList)):
                 edgeSpot1 = edgeList[i][0]
@@ -668,6 +668,7 @@ class metric:
 
 
     def optimizeLEHR(self,convar):
+        temp = self.calLEHR(convar)
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
         #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
@@ -940,6 +941,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         test = happyBackground[1]
         temp = test.optimizeLEHR(conVar)
         conVar = temp.x
+        test.calLEHR(conVar)  #line needed, optimizeLEHR does not cause Test to reach critical point (it takes an extra step)
         endOpt = time.time()
         working = test.isLCSC
         if working == True:
@@ -964,7 +966,7 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
                 endConVar = time.time()
                 startOpt = time.time()
                 temp = test.optimizeLEHR(conVar)
-                test.calLEHR(conVar)
+      #          test.calLEHR(conVar)  #Important?
                 endOpt = time.time()
                 conVar = temp.x
                 test.calLEHR(conVar)
@@ -1019,7 +1021,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=2
+    numberOfBackgrounds=1
     numberRestarts = 5
     #seed=4741252
     seed = 32190

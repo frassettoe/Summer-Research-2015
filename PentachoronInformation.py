@@ -600,7 +600,7 @@ class metric:
                     LCSC = False
             return LCSC
 
-    def checkLEinstein(self,tableOfEdges,edgeList,error=.00001):
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.00000000001):
         LEinstein = True
         for i in range(len(self.background.edgeList)):
                 edgeSpot1 = edgeList[i][0]
