@@ -11,7 +11,7 @@ import copy
 import numpy
 from scipy.optimize import minimize
 import scipy
-import LEHRBackgroundMetricBuilder
+#import LEHRBackgroundMetricBuilder
 
 
 class Edge:
@@ -283,6 +283,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         #Reads in a background metric file and forms the file into a useful format
         backgroundMetric = open(fileName,"r")
         storage = backgroundMetric.readlines()
+        backgroundMetric.close()
         nameList = []
         lengthList = []
         i = 0
@@ -420,11 +421,13 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
     #Input: Error tolerance allowed to be considered L-Einstein
     #Output: True if L-Einstein requirments met, false otherwise
-    def checkLEinstein(self,error=.0001):
+    def checkLEinstein(self,error=.00001):
         LEinstein = True
         for i in range(len(self.edgeList)):  # for each edge
-            curvature=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgecurvature  #find edge curvature
-            LEHRl=self.edgetable[self.edgeList[i][0]][self.edgeList[i][1]].edgelength  #find edge length
+            edge1 = self.edgeList[i][0]
+            edge2 = self.edgeList[i][1]
+            curvature=self.edgetable[edge1][edge2].edgecurvature  #find edge curvature
+            LEHRl=self.edgetable[edge1][edge2].edgelength  #find edge length
             LEHRl=LEHRl*self.LEHR  #multiply edge length by LEHR
             if math.fabs(curvature-LEHRl)> error:  #check if L-Einstein met
                 LEinstein= False
@@ -471,6 +474,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         self.vertexNumber = 0
         self.LEHR = 10000
         self.LCSC = False
+        self.LEinstein = False
         self.vertexCurvatureList = []
         self.sumOfEdgesAtVertex = []
         readFile = open(manifoldFile)
@@ -530,10 +534,11 @@ class metric:
             result = self.findLEHR(edgeList,self.edgeTable)
             self.LEHR = result
             self.isLCSC = self.checkLCSC(self.edgeTable,edgeList)
+            self.isLEinstein = self.checkLEinstein(self.edgeTable,edgeList)
         else:
             result = 1000
-
         return result
+
     def advancedPrint(self,conVar):
         print("Tetrahedran")
         print("Edges in Tetrahedran")
@@ -576,7 +581,7 @@ class metric:
             print("")
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
-        print("Is L-Einstein: "+"No Check yet")
+        print("Is L-Einstein: "+str(self.isLEinstein))
 
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
@@ -594,6 +599,20 @@ class metric:
                     #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
                     LCSC = False
             return LCSC
+
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.00001):
+        LEinstein = True
+        for i in range(len(self.background.edgeList)):
+                edgeSpot1 = edgeList[i][0]
+                edgeSpot2 = edgeList[i][1]
+        for i in range(len(edgeList)):
+            curvature=tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature
+            LEHRl=tableOfEdges[edgeSpot1][edgeSpot2].edgelength
+            LEHRl=LEHRl*self.LEHR
+            if math.fabs(curvature-LEHRl)> error:
+                LEinstein = False
+        return LEinstein
+
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
@@ -659,6 +678,7 @@ class metric:
         self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         self.vertexCurvatureList = [0]
         self.isLCSC = False
+        self.isLEinstein = False
         self.good = True
         self.tetrahedraList = []
         self.edgeTable = []
@@ -778,6 +798,7 @@ def modifyBackground(c1,c2,c3,c4,c5,filename):
         nameList[i][0] = int(nameList[i][0])
         nameList[i][1] = int(nameList[i][1])
     lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
+    backgroundMetric.close()
     backgroundMetric = open(filename,"w")
     for i in range(len(nameList)):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
@@ -790,23 +811,28 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
     results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
     failures.append(["c1","c2","c3","c4","c5","Conformal Variations"])
     for k in range(numberBackgrounds):
-        c1 = random.random()
-        c2 = random.random()
-        c3 = random.random()
-        c4 = random.random()
-        c5 = random.random()
-        # c1=0
-        # c2=0
-        # c3=0
-        # c4=0
-        # c5=0
+        # c1 = random.random()
+        # c2 = random.random()
+        # c3 = random.random()
+        # c4 = random.random()
+        # c5 = random.random()
+        c1=0
+        c2=0
+        c3=0
+        c4=0
+        c5=0
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
         while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>.1):
-            c1 = random.random()
-            c2 = random.random()
-            c3 = random.random()
-            c4 = random.random()
-            c5 = random.random()
+            # c1 = random.random()
+            # c2 = random.random()
+            # c3 = random.random()
+            # c4 = random.random()
+            # c5 = random.random()
+            c1=0
+            c2=0
+            c3=0
+            c4=0
+            c5=0
         for j in range(restarts):
             working = True
             happyConVar = False
@@ -837,13 +863,20 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
 def main():
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=4
-    c1 = 0.170530813
-    c2 = 0.343799591
-    c3 = 0.337730638
-    c4 = 0.08904089
-    c5 = 0.147800697
-    conformalVariations = [ 4.920385485,4.714096706,4.847160096,4.932959297,4.982229411]
+    numberVertices=5
+    c1=0
+    c2=0
+    c3=0
+    c4=0
+    c5=0
+    # c1 =  -0.716644386
+    # c2 = -0.142619032
+    # c3 = 0.188453604
+    # c4 = -0.531219776
+    # c5 = -0.270863527
+
+    conformalVariations = [0,0,0,0,0]
+    #-9.718082413, -10.37402987, -10.67030935, -9.946968416, -10.1422233
     #seed=4741252
     #seed=263594
     seed=56932684
@@ -858,5 +891,6 @@ def main():
     exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
+   # exploreMetric.background.showEdgeTable(conformalVariations)
 
 main()

@@ -502,7 +502,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
     #Input: Error tolerance allowed to be considered L-Einstein
     #Output: True if L-Einstein requirments met, false otherwise
-    def checkLEinstein(self,error=.0001):
+    def checkLEinstein(self,error=.00001):
         LEinstein = True
         for i in range(len(self.edgeList)):  # for each edge
             edge1 = self.edgeList[i][0]
@@ -510,7 +510,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
             curvature=self.edgetable[edge1][edge2].edgecurvature  #find edge curvature
             LEHRl=self.edgetable[edge1][edge2].edgelength  #find edge length
             LEHRl=LEHRl*self.LEHR  #multiply edge length by LEHR
-            if math.fabs(curvature-LEHRl)> error:  #check if L-Einstein met
+            if math.fabs(curvature-LEHRl)> error:#check if L-Einstein met
                 LEinstein= False
                 break  #stops if L-Einstein found not to exist
         return LEinstein
@@ -653,7 +653,7 @@ class metric:
                     break
             return LCSC
 
-    def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.00003):
         LEinstein = True
         for i in range(len(self.background.edgeList)):
                 edgeSpot1 = edgeList[i][0]
@@ -910,17 +910,27 @@ def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,n
         working = True
         happyConVar = False
         startConar = time.time()
-        c1 = random.random()/2
-        c2 = random.random()/2
-        c3 = random.random()/2
-        c4 = random.random()/2
-        c5 = random.random()/2
+        # c1 = random.random()/2
+        # c2 = random.random()/2
+        # c3 = random.random()/2
+        # c4 = random.random()/2
+        # c5 = random.random()/2
+        c1=0
+        c2=0
+        c3=0
+        c4=0
+        c5=0
         while c1**2+c2**2+c3**2+c4**2+c5**2 > 1**2 or happyBackground[0] == False:
-            c1 = random.random()/2
-            c2 = random.random()/2
-            c3 = random.random()/2
-            c4 = random.random()/2
-            c5 = random.random()/2
+            # c1 = random.random()/2
+            # c2 = random.random()/2
+            # c3 = random.random()/2
+            # c4 = random.random()/2
+            # c5 = random.random()/2
+            c1=0
+            c2=0
+            c3=0
+            c4=0
+            c5=0
             happyBackground = legalBackground(c1,c2,c3,c4,c5, backgroundfile,triangulation)
         endModuli = time.time()
         conVar = [0]*numberVertices
@@ -1009,7 +1019,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=10
+    numberOfBackgrounds=2
     numberRestarts = 5
     #seed=4741252
     seed = 32190
