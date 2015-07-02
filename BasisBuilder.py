@@ -341,20 +341,19 @@ def convertTetrahedraToEdges(tetrahedraList):
     edgeList = []
     spot = 0
     for i in range(len(tetrahedraList)):
-        while len(tetrahedraList[i]) > spot:
-            a = tetrahedraList[i][spot]
-            b = tetrahedraList[i][spot+1]
-            c = tetrahedraList[i][spot+2]
-            d = tetrahedraList[i][spot+3]
-            spot = spot+4
-            edgeList.append([a-1,b-1])
-            edgeList.append([a-1,c-1])
-            edgeList.append([a-1,d-1])
-            edgeList.append([b-1,c-1])
-            edgeList.append([b-1,d-1])
-            edgeList.append([c-1,d-1])
-            if d > max:
-                max = d
+        a = tetrahedraList[i][spot]
+        b = tetrahedraList[i][spot+1]
+        c = tetrahedraList[i][spot+2]
+        d = tetrahedraList[i][spot+3]
+        edgeList.append([a-1,b-1])
+        edgeList.append([a-1,c-1])
+        edgeList.append([a-1,d-1])
+        edgeList.append([b-1,c-1])
+        edgeList.append([b-1,d-1])
+        edgeList.append([c-1,d-1])
+        if d > max:
+            max = d
+    print(edgeList)
     print("Create Graph from list")
     graph = np.zeros([max,max])
     for i in range(len(edgeList)):
@@ -363,9 +362,9 @@ def convertTetrahedraToEdges(tetrahedraList):
     print(graph)
     return graph
 
-def main():
+def main(file = 'manifoldExample4.txt'):
     print("Hello World")
-    readFile = open('manifoldExample4.txt')
+    readFile = open(file)
     data = readFile.read()        #Prepares file for read in
     data = data.split("facets :=") #Look up strip to remove white space
     data[1] = data[1].strip('[];')
@@ -387,5 +386,4 @@ def main():
     print("Basis")
     for i in range(len(basis)):
         print(basis[i])
-
-main()
+    return basis
