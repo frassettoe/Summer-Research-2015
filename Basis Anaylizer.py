@@ -647,11 +647,14 @@ class metric:
                 listOfLengths[edgeSpot2].append(lengths)
            # for i in range(self.vertexNumber):
            #     print(i,self.calculateVertexCurvature(i,tableOfEdges),self.LEHR * L)
+            self.LCSCError = 0
             for i in range(1,self.background.vertexNumber+1):
+                if self.LCSCError < math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-self.LEHR * sum(listOfLengths[i])/2):
+                        self.LCSCError = self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * sum(listOfLengths[i])/2)
                 if math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * sum(listOfLengths[i])/2)) > (error):
                     #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
                     LCSC = False
-                    break
+                   # break
             return LCSC
 
     def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
@@ -827,6 +830,7 @@ class metric:
         self.good = True
         self.LEHR = 1000
         self.edgeTable = []
+        self.LCSCError = 999
         self.minima = []
 
 
@@ -878,7 +882,7 @@ def modifyBackground(cList,base,filename):
     lengthList = numpy.dot(base.transpose(),cList)
     for i in range(len(lengthList)):
         lengthList[i] = math.exp(lengthList[i])**.5
-   # lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
+    #lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
 #    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
     backgroundMetric = open(filename,"w")
     for i in range(len(nameList)):
@@ -891,8 +895,8 @@ def generateConvar(size,numberSame):
     conVar = []
     temp = []
     for i in range(size-numberSame):
-        conVar.append(random.random()*2-1)
-    temp = random.random()*2-1
+        conVar.append(random.random()*3-1)
+    temp = random.random()*3-1
     for i in range(numberSame):
         conVar.append(temp)
     conVar[0] = random.random()
@@ -916,6 +920,7 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
     temp.append("LCSC")
     temp.append("L-Einstein")
     temp.append("numberRestarts")
+    temp.append("LCSC Error")
     results.append(temp)
     temp = []
     for i in range(len(basis)):
@@ -925,6 +930,7 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
     temp.append("LEHR")
     temp.append("LCSC")
     temp.append("Is LEinstein")
+    temp.append("LCSC Error")
     failures.append(temp)
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
     lengths.append(["Edges"])
@@ -953,7 +959,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
     startConar = time.time()
     cList = []
     for i in range(len(basis)):
-        cList.append(random.random()/2)
+        cList.append(random.random()*20-1)
     squares = [i**2 for i in cList]
     while sum(squares) > 10**2 or happyBackground[0] == False:
         # if sum(squares) > 10**2:
@@ -978,7 +984,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
     working = test.isLCSC
     if working == True:
         listOfLengths = []
-        results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1])
+        results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
         for i in range(len(test.edgeTable)):
@@ -1005,7 +1011,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
             working = test.isLCSC
             if working == True:
                 listOfLengths = []
-                results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j])
+                results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j,test.LCSCError])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
                 for i in range(len(test.edgeTable)):
@@ -1020,7 +1026,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
                 # volumes.append(listOfVolumes)
                 break
     if working == False:
-        failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein])
+        failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,test.LCSCError])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
         listOfVolumes = []
@@ -1039,8 +1045,8 @@ def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=4
-    numberOfBackgrounds=10000
+    numberVertices=5
+    numberOfBackgrounds=1000
     numberRestarts = 5
     #seed=4741252
     seed = 32190
@@ -1049,7 +1055,7 @@ def main():
     #seed=71293
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample3.txt'
+    triangulation='manifoldExample4.txt'
     backgroundfile='backgroundMetric.txt'
     basis = BasisBuilder.main(triangulation)
     #basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
