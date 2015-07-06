@@ -1,3 +1,4 @@
+__author__ = 'Michael'
 __author__ = 'Owner'
 
 # uncomment all lines with 333 in them to get hessian working
@@ -12,7 +13,6 @@ from scipy.optimize import minimize
 import scipy
 import time
 import cProfile
-import BasisBuilder
 
 
 
@@ -503,7 +503,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 
     #Input: Error tolerance allowed to be considered L-Einstein
     #Output: True if L-Einstein requirments met, false otherwise
-    def checkLEinstein(self,error=.0001):
+    def checkLEinstein(self,error=.00001):
         LEinstein = True
         for i in range(len(self.edgeList)):  # for each edge
             edge1 = self.edgeList[i][0]
@@ -511,7 +511,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
             curvature=self.edgetable[edge1][edge2].edgecurvature  #find edge curvature
             LEHRl=self.edgetable[edge1][edge2].edgelength  #find edge length
             LEHRl=LEHRl*self.LEHR  #multiply edge length by LEHR
-            if math.fabs(curvature-LEHRl)> error:  #check if L-Einstein met
+            if math.fabs(curvature-LEHRl)> error:#check if L-Einstein met
                 LEinstein= False
                 break  #stops if L-Einstein found not to exist
         return LEinstein
@@ -654,7 +654,7 @@ class metric:
                     break
             return LCSC
 
-    def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.0000001):
         LEinstein = True
         for i in range(len(self.background.edgeList)):
                 edgeSpot1 = edgeList[i][0]
@@ -669,6 +669,7 @@ class metric:
 
 
     def optimizeLEHR(self,convar):
+        temp = self.calLEHR(convar)
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
         #res = minimize(self.calLEHR, convar ,method = 'Newton-CG',jac=self.grad,hess = self.hess,options={'disp':True})
         #res = minimize(self.simplerFunction, self.x0 ,method = 'Newton-CG',jac = simplerFunctionDer,hessp = simplerFunctionHes,options={'disp':True})
@@ -856,7 +857,7 @@ def ToReducedRowEchelonForm( M):
         lead += 1
 
 
-def modifyBackground(cList,base,filename):
+def modifyBackground(c1,c2,c3,c4,c5,filename):
     backgroundMetric = open(filename,"r")
     storage = backgroundMetric.readlines()
     nameList = []
@@ -872,18 +873,10 @@ def modifyBackground(cList,base,filename):
         nameList[i] = nameList[i].split(",")
         nameList[i][0] = int(nameList[i][0])
         nameList[i][1] = int(nameList[i][1])
-        #nameList[i].append(0)  #Possible place for error, does nameList[i]  correspond to basis edge[i]
-    base = numpy.array(base)
-    cList = numpy.array(cList)
-    lengthList = numpy.dot(base.transpose(),cList)
-    for i in range(len(lengthList)):
-        lengthList[i] = math.exp(lengthList[i])**.5
-   # lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
-#    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
+    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
     backgroundMetric = open(filename,"w")
     for i in range(len(nameList)):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
-       # print(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
     backgroundMetric.close()
 
 def generateConvar(size,numberSame):
@@ -899,7 +892,7 @@ def generateConvar(size,numberSame):
     random.shuffle(conVar)
     return conVar
 
-def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
+def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
     failures = []
     times = []
@@ -907,25 +900,8 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
     volumes = []
     failedlengths =[]
     working = True
-    temp = []
-    for i in range(len(basis)):
-        temp.append('c'+str(i+1))
-    for i in range(numberVerts):
-        temp.append('f'+str(i+1))
-    temp.append("LEHR")
-    temp.append("LCSC")
-    temp.append("L-Einstein")
-    temp.append("numberRestarts")
-    results.append(temp)
-    temp = []
-    for i in range(len(basis)):
-        temp.append('c'+str(i+1))
-    for i in range(numberVerts):
-        temp.append('f'+str(i+1))
-    temp.append("LEHR")
-    temp.append("LCSC")
-    temp.append("Is LEinstein")
-    failures.append(temp)
+    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
+    failures.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","Is LCSC","Is LEinstein"])
     times.append(["Full Search Time","Generate Moduli Time","Optomize Time","Starting State/Conformal Varition Finder Time","Restarts"])
     lengths.append(["Edges"])
     startAll = time.time()
@@ -936,30 +912,42 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
         working = True
         happyConVar = False
         startConar = time.time()
-        cList = []
-        for i in range(len(basis)):
-            cList.append(random.random()/2)
-        squares = [i**2 for i in cList]
-        while sum(squares) > 1**2 or happyBackground[0] == False:
-            cList = []
-            for i in range(len(basis)):
-                cList.append(random.random()/2)
-            squares = [i**2 for i in cList]
-            happyBackground = legalBackground(cList, basis,backgroundfile,triangulation)
+        c1 = random.random()/2
+        c2 = random.random()/2
+        c3 = random.random()/2
+        c4 = random.random()/2
+        c5 = random.random()/2
+        # c1=0
+        # c2=0
+        # c3=0
+        # c4=0
+        # c5=0
+        while c1**2+c2**2+c3**2+c4**2+c5**2 > 1**2 or happyBackground[0] == False:
+            c1 = random.random()/2
+            c2 = random.random()/2
+            c3 = random.random()/2
+            c4 = random.random()/2
+            c5 = random.random()/2
+            # c1=0
+            # c2=0
+            # c3=0
+            # c4=0
+            # c5=0
+            happyBackground = legalBackground(c1,c2,c3,c4,c5, backgroundfile,triangulation)
         endModuli = time.time()
-        conVar = [0]*numberVerts
+        conVar = [0]*numberVertices
         print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
         startOpt = time.time()
         #add optimize
         test = happyBackground[1]
         temp = test.optimizeLEHR(conVar)
         conVar = temp.x
-        test.calLEHR(conVar)
+        test.calLEHR(conVar)  #line needed, optimizeLEHR does not cause Test to reach critical point (it takes an extra step)
         endOpt = time.time()
         working = test.isLCSC
         if working == True:
             listOfLengths = []
-            results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1])
+            results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,-1])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
             for i in range(len(test.edgeTable)):
@@ -972,21 +960,21 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
                 happyConVar = False
                 same = j
                 while(happyConVar == False):
-                    conVar = generateConvar(numberVerts,same)
+                    conVar = generateConvar(numberVertices,same)
                     test = metric(backgroundfile,triangulation,conVar)
                     test.calLEHR(conVar)
                     happyConVar = test.good
                 endConVar = time.time()
                 startOpt = time.time()
                 temp = test.optimizeLEHR(conVar)
-    #            test.calLEHR(conVar)  #Important?
+      #          test.calLEHR(conVar)  #Important?
                 endOpt = time.time()
                 conVar = temp.x
                 test.calLEHR(conVar)
                 working = test.isLCSC
                 if working == True:
                     listOfLengths = []
-                    results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j])
+                    results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein,j])
                     endBackground = time.time()
                     times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
                     for i in range(len(test.edgeTable)):
@@ -1001,7 +989,7 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
                     # volumes.append(listOfVolumes)
                     break
         if working == False:
-            failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein])
+            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC,test.isLEinstein])
             endBackground = time.time()
             times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
             listOfVolumes = []
@@ -1020,13 +1008,12 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
     print(endAll-startAll)
     return [results,failures,times,lengths,volumes,failedlengths]
 
-def legalBackground(cList,base,background,triagulation):
-    modifyBackground(cList,base,background)
-    cTest = [0]*len(cList)
-    test = metric(background,triagulation,cTest)
-    LEHR = test.calLEHR(cTest)
+def legalBackground(c1,c2,c3,c4,c5,background,triagulation):
+    modifyBackground(c1,c2,c3,c4,c5,background)
+    test = metric(background,triagulation,[0,0,0,0,0])
+    LEHR = test.calLEHR([0,0,0,0,0])
     if LEHR >= 1000:
-       return [False,0]
+        return [False,0]
     else:
         return [True,test]
 
@@ -1046,11 +1033,9 @@ def main():
     #seed=9865721
     triangulation='manifoldExample4.txt'
     backgroundfile='backgroundMetric.txt'
-    #basis = BasisBuilder.main(triangulation)
-    basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
     faceInfo = " "
     print("Hello World!\n")
-    results = pentachoronWalk(basis,numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
+    results = pentachoronWalk(numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
     for i in range(len(results[0])):
         print(results[0][i])
     for i in range(len(results[1])):
