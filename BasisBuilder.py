@@ -195,12 +195,12 @@ def getCycleCycleVector(cycle1,cycle2,graph,overlap):
     return vector
 
 def getCyclePathCycle(cycle1,cycle2,path,graph):
-    warning.warn("Untested Function Called")
+    warning.warn("Lightly Tested Function Called")
     vector = []
     cycle = []
     value = 1
-    pointOfOverlapInCycle1WithPath = cycle1.index(path[0])  #find the location of overlap in the primal cycle
-    pointOfOverlapInCycle2WithPath = cycle2.index(path[-1])  #find the location of overlap in the primal cycle
+    pointOfOverlapInCycle1WithPath = cycle1.index(path[0])  #find the location of overlap in the ?primal? cycle
+    pointOfOverlapInCycle2WithPath = cycle2.index(path[-1])  #find the location of overlap in the ?mutated? cycle
     #combine cycle 1 and cycle 2
     for i in range(len(cycle2)): #for each node in mutated cycle
         if i == pointOfOverlapInCycle2WithPath: #if overlap occurs
