@@ -221,7 +221,7 @@ def getBackgroundManifoldFile(listOfTetrahedra,tableOfEdges,fileName = "backgrou
 #change log: Michael 10/16/4
 def main():
     print("Hello World")
-    readFile = open('manifoldExample4.txt')
+    readFile = open('manifoldExample3.txt')
     data = readFile.read()        #Prepares file for read in
     data = data.split("facets :=") #Look up strip to remove white space
     data[1] = data[1].strip('[];')

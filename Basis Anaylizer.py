@@ -930,92 +930,7 @@ def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 10
     lengths.append(["Edges"])
     startAll = time.time()
     for k in range(numberBackgrounds):
-        startBackground = time.time()
-        happyBackground = [False,0]
-        startModuli = time.time()
-        working = True
-        happyConVar = False
-        startConar = time.time()
-        cList = []
-        for i in range(len(basis)):
-            cList.append(random.random()/2)
-        squares = [i**2 for i in cList]
-        while sum(squares) > 1**2 or happyBackground[0] == False:
-            cList = []
-            for i in range(len(basis)):
-                cList.append(random.random()/2)
-            squares = [i**2 for i in cList]
-            happyBackground = legalBackground(cList, basis,backgroundfile,triangulation)
-        endModuli = time.time()
-        conVar = [0]*numberVerts
-        print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        startOpt = time.time()
-        #add optimize
-        test = happyBackground[1]
-        temp = test.optimizeLEHR(conVar)
-        conVar = temp.x
-        test.calLEHR(conVar)
-        endOpt = time.time()
-        working = test.isLCSC
-        if working == True:
-            listOfLengths = []
-            results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1])
-            endBackground = time.time()
-            times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
-            for i in range(len(test.edgeTable)):
-                for j in range(len(test.edgeTable)):
-                    if test.edgeTable[i][j] != 0:
-                        listOfLengths.append(test.edgeTable[i][j].edgelength)
-            lengths.append(listOfLengths)
-        else:
-            for j in range(restarts):
-                happyConVar = False
-                same = j
-                while(happyConVar == False):
-                    conVar = generateConvar(numberVerts,same)
-                    test = metric(backgroundfile,triangulation,conVar)
-                    test.calLEHR(conVar)
-                    happyConVar = test.good
-                endConVar = time.time()
-                startOpt = time.time()
-                temp = test.optimizeLEHR(conVar)
-    #            test.calLEHR(conVar)  #Important?
-                endOpt = time.time()
-                conVar = temp.x
-                test.calLEHR(conVar)
-                working = test.isLCSC
-                if working == True:
-                    listOfLengths = []
-                    results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j])
-                    endBackground = time.time()
-                    times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
-                    for i in range(len(test.edgeTable)):
-                        for j in range(len(test.edgeTable)):
-                            if test.edgeTable[i][j] != 0:
-                                listOfLengths.append(test.edgeTable[i][j].edgelength)
-                    lengths.append(listOfLengths)
-                    # listOfVolumes = [] #uncomment block to get the volumes of metrics that find L-CSC
-                    # for i in range(len(test.background.tetrahedralist)):
-                    #     vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
-                    #     listOfVolumes.append(vol)
-                    # volumes.append(listOfVolumes)
-                    break
-        if working == False:
-            failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein])
-            endBackground = time.time()
-            times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
-            listOfVolumes = []
-            for i in range(len(test.background.tetrahedralist)):
-                vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
-                listOfVolumes.append(vol)
-            volumes.append(listOfVolumes)
-            listOfFailedLenghts = []
-            for i in range(len(test.edgeTable)):
-                for j in range(len(test.edgeTable)):
-                    if test.edgeTable[i][j] != 0:
-                        listOfFailedLenghts.append(test.edgeTable[i][j].edgelength)
-            failedlengths.append(listOfFailedLenghts)
-            #print(temp)
+        walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgrounds,results,times,lengths,failures,volumes,failedlengths,k,restarts)
     endAll = time.time()
     print(endAll-startAll)
     return [results,failures,times,lengths,volumes,failedlengths]
@@ -1029,13 +944,103 @@ def legalBackground(cList,base,background,triagulation):
        return [False,0]
     else:
         return [True,test]
-
+def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgrounds,results,times,lengths,failures,volumes,failedlengths,k,restarts):
+    startBackground = time.time()
+    happyBackground = [False,0]
+    startModuli = time.time()
+    working = True
+    happyConVar = False
+    startConar = time.time()
+    cList = []
+    for i in range(len(basis)):
+        cList.append(random.random()/2)
+    squares = [i**2 for i in cList]
+    while sum(squares) > 10**2 or happyBackground[0] == False:
+        # if sum(squares) > 10**2:
+        #     print("Finding C-List")
+        # else:
+        #     print("NOt")
+        cList = []
+        for i in range(len(basis)):
+            cList.append(random.random()-.5)
+        squares = [i**2 for i in cList]
+        happyBackground = legalBackground(cList, basis,backgroundfile,triangulation)
+    endModuli = time.time()
+    conVar = [0]*numberVerts
+    print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
+    startOpt = time.time()
+    #add optimize
+    test = happyBackground[1]
+    temp = test.optimizeLEHR(conVar)
+    conVar = temp.x
+    test.calLEHR(conVar)
+    endOpt = time.time()
+    working = test.isLCSC
+    if working == True:
+        listOfLengths = []
+        results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1])
+        endBackground = time.time()
+        times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
+        for i in range(len(test.edgeTable)):
+            for j in range(len(test.edgeTable)):
+                if test.edgeTable[i][j] != 0:
+                    listOfLengths.append(test.edgeTable[i][j].edgelength)
+        lengths.append(listOfLengths)
+    else:
+        for j in range(restarts):
+            happyConVar = False
+            same = j
+            while(happyConVar == False):
+                conVar = generateConvar(numberVerts,same)
+                test = metric(backgroundfile,triangulation,conVar)
+                test.calLEHR(conVar)
+                happyConVar = test.good
+            endConVar = time.time()
+            startOpt = time.time()
+            temp = test.optimizeLEHR(conVar)
+#            test.calLEHR(conVar)  #Important?
+            endOpt = time.time()
+            conVar = temp.x
+            test.calLEHR(conVar)
+            working = test.isLCSC
+            if working == True:
+                listOfLengths = []
+                results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j])
+                endBackground = time.time()
+                times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
+                for i in range(len(test.edgeTable)):
+                    for j in range(len(test.edgeTable)):
+                        if test.edgeTable[i][j] != 0:
+                            listOfLengths.append(test.edgeTable[i][j].edgelength)
+                lengths.append(listOfLengths)
+                # listOfVolumes = [] #uncomment block to get the volumes of metrics that find L-CSC
+                # for i in range(len(test.background.tetrahedralist)):
+                #     vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
+                #     listOfVolumes.append(vol)
+                # volumes.append(listOfVolumes)
+                break
+    if working == False:
+        failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein])
+        endBackground = time.time()
+        times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
+        listOfVolumes = []
+        for i in range(len(test.background.tetrahedralist)):
+            vol = test.background.tetrahedralist[i].volumeOfTetrahedron(test.edgeTable)
+            listOfVolumes.append(vol)
+        volumes.append(listOfVolumes)
+        listOfFailedLenghts = []
+        for i in range(len(test.edgeTable)):
+            for j in range(len(test.edgeTable)):
+                if test.edgeTable[i][j] != 0:
+                    listOfFailedLenghts.append(test.edgeTable[i][j].edgelength)
+        failedlengths.append(listOfFailedLenghts)
+        #print(temp)
 def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=5
-    numberOfBackgrounds=10
+    numberVertices=4
+    numberOfBackgrounds=10000
     numberRestarts = 5
     #seed=4741252
     seed = 32190
@@ -1044,10 +1049,10 @@ def main():
     #seed=71293
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample4.txt'
+    triangulation='manifoldExample3.txt'
     backgroundfile='backgroundMetric.txt'
-    #basis = BasisBuilder.main(triangulation)
-    basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
+    basis = BasisBuilder.main(triangulation)
+    #basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
     faceInfo = " "
     print("Hello World!\n")
     results = pentachoronWalk(basis,numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
