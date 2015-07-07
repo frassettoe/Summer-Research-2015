@@ -895,13 +895,57 @@ def generateConvar(size,numberSame):
     conVar = []
     temp = []
     for i in range(size-numberSame):
-        conVar.append(random.random()*3-1)
-    temp = random.random()*3-1
+        conVar.append(random.randint(-1,3))
+    temp = random.randint(-1,3)
     for i in range(numberSame):
         conVar.append(temp)
     conVar[0] = random.random()
     random.shuffle(conVar)
     return conVar
+
+def advancedGenerateConvar(size,background,triagulation,givenConVar = [], steps = 17, startingSize = 1,outerLoop = 1):
+    findImprove = False
+    if len(givenConVar) == 0:
+        conVarZero = [0] * size
+        finalConVar = [0] * size
+    else:
+        conVarZero = copy.deepcopy(givenConVar)
+        finalConVar = copy.deepcopy(givenConVar)
+    storage = 0
+    maxTemp = outerLoop
+    for k in range(outerLoop):
+        for i in range(size):
+            stepSize = startingSize
+            storage = conVarZero[i]
+            for j in range(steps):
+                base = metric(background,triagulation,conVarZero)
+                base.calLEHR(conVarZero)
+                conVarZero[i] = conVarZero[i]+stepSize
+                temp1 = metric(background,triagulation,conVarZero)
+                temp1.calLEHR(conVarZero)
+                conVarZero[i] = conVarZero[i] - 2 * stepSize
+                temp2 = metric(background,triagulation,conVarZero)
+                temp2.calLEHR(conVarZero)
+                if min(temp1.LEHR,temp2.LEHR) > base.LEHR:
+                    conVarZero[i] = conVarZero[i] + stepSize
+                elif temp1.LEHR < temp2.LEHR:
+                    conVarZero[i] = conVarZero[i] + 2 * stepSize
+                    findImprove = True
+                else:
+                    findImprove = True
+                if findImprove == False:
+                    stepSize = stepSize/2
+                    findImprove = False
+                print(base.LEHR)
+            finalConVar[i] = conVarZero[i]
+            #conVarZero[i] = storage
+        base = metric(background,triagulation,finalConVar)
+        base.calLEHR(finalConVar)
+        conVarZero = copy.deepcopy(finalConVar)
+    print(base.LEHR)
+    print("\n")
+    return  finalConVar
+
 
 def pentachoronWalk(basis,numberVerts,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
     results = []
@@ -997,11 +1041,16 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
         for j in range(restarts):
             happyConVar = False
             same = j
+            happyConVar = test.good
             while(happyConVar == False):
                 conVar = generateConvar(numberVerts,same)
                 test = metric(backgroundfile,triangulation,conVar)
                 test.calLEHR(conVar)
                 happyConVar = test.good
+            conVar = advancedGenerateConvar(numberVerts,backgroundfile,triangulation,conVar)
+            print(conVar)
+            test = metric(backgroundfile,triangulation,conVar)
+            test.calLEHR(conVar)
             endConVar = time.time()
             startOpt = time.time()
             temp = test.optimizeLEHR(conVar)
@@ -1049,8 +1098,8 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=50
-    numberRestarts = 5
+    numberOfBackgrounds=10
+    numberRestarts = 1
     #seed=4741252
     seed = 32190
     #seed=263594
