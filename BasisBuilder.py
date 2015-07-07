@@ -41,32 +41,6 @@ def buildSpanningTree(graph):
                     spanTree[i][j] = 1  #  add edge to graph
                     spanTree[j][i] = 1
     return spanTree
-# Early attempt at finding all cycles in a graph, never called, not tested
-# Author: M, 6/30/15
-# def findCycles(graph):  #never called
-#     print("Find fundimental Cycles")
-#     spanTree = buildSpanningTree(graph)
-#     cycleMatrix = []
-#     print(spanTree)
-#     chords = np.subtract(graph,spanTree)
-#     print("Chords")
-#     print(chords)
-#     print("Cycles")
-#     for i in range(len(graph)):
-#         for j in range(len(graph)):
-#             if chords[i,j] == 1:
-#                 spanTree[i,j] = 1
-#                 spanTree[j,i] = 1
-#                 chords[i,j] = 0
-#                 chords[j,i] = 0
-#                 cycle = findSinglePath(spanTree,i,j)
-#                 spanTree[i,j] = 0
-#                 spanTree[j,i] = 0
-#                 cycleMatrix.append([0]*len(graph))
-#                 for i in range(len(cycle)):
-#                     cycleMatrix[-1][cycle[i]] = 1
-#     cycleMatrix = np.array(cycleMatrix)
-#     return cycleMatrix
 
 #Input: graph, starting node, ending node
 #output: List of nodes forming a path between start and end
@@ -101,6 +75,7 @@ def findSingleCyclePath(graph,start,end):
         if len(cycle) >= len(graph)+1: #warn due to untested case
             warning.warn("No path Found, possible fatal error")
     return cycle
+
 #Input: graph, dendroid, spanning tree
 #Output: odd cycle in spanning tree with addition of edge from graph not in present spanning tree
 #Author: M, 6/30/15
@@ -164,6 +139,7 @@ def getCycleVector(cycle,graph):
             elif i < j and graph[i,j] != 0: #else if convention followed and edge in graph
                 vector.append(0) #add zero
     return vector
+
 #Input: primal cycle, mutated cycle, graph, node that is in both cycles
 #output: vector
 #Author: ME 06/31/15
@@ -193,7 +169,10 @@ def getCycleCycleVector(cycle1,cycle2,graph,overlap):
             elif m <  n and graph[m,n] != 0:
                 vector.append(0)
     return vector
-
+#Input: primal cycle, mutated cycle, path between the two cycles with position -1 from the mutated cycle and position 0 from primal cycle, matrix graph
+#Output: vector
+#Author: M 7/1/15
+#Change Log: none
 def getCyclePathCycle(cycle1,cycle2,path,graph):
     warning.warn("Lightly Tested Function Called")
     vector = []
@@ -275,11 +254,15 @@ def newCycleOddSoFindEven(graph,cycles,i,j):
         print("Combined cycle even")
     return vector
 
+#Input: matrix graph and cycles style 2
+#Output: vector
+#Author: M, 7/01/15
+#Change Log: none
 def advancedOddSearch(graph,cycles):
     #check to see if cycles overlap on nodes once or multiple times
-    overlap = -1
-    overlapTwiceOrMore = False
-    for m in range(len(cycles)):
+    overlap = -1 #location of point shared between two cycles
+    overlapTwiceOrMore = False #checks if cycles overlap at multiple points (should not occur, as case is checked earlier)
+    for m in range(len(cycles)):  #Find points of overlap
         for n in range(len(cycles[m])):
             if overlap != -1 and cycles[0][m] == cycles[1][n]:
                 overlapTwiceOrMore = True
@@ -301,30 +284,34 @@ def advancedOddSearch(graph,cycles):
         print("Find path and create Vector 3, no overlap")
         warning.warn("Case Three Call")
         tempGraph = copy.deepcopy(graph)
-        for m in range(len(cycles)):
+        for m in range(len(cycles)):  #Copy matix graph into new graph, removes cycles
             for n in range(len(cycles[m])):
                 tempGraph[cycles[m][n],cycles[m][n-1]] = 0
                 tempGraph[cycles[m][n-1],cycles[m][n]] = 0
         print(tempGraph)
-        connection = findLengthConnection(cycles,tempGraph)
+        connection = findLengthConnection(cycles,tempGraph)  #Find connection between two cycles
         print("Connection")
         print(connection)
-        vector = getCyclePathCycle(cycles[0],cycles[1],connection,graph)
+        vector = getCyclePathCycle(cycles[0],cycles[1],connection,graph)  #gets vector
     return vector
 
 #Test some more
+#Input: cycles (style 2) matrix graph
+#Output: path betwen two cycles
+#Author: M, 7/1/15
+#Change Log: none
 def findLengthConnection(cycles,graph):
     path = []
-    for i in range(len(cycles[0])):
-        for j in range(len(cycles[1])):
-            if graph[cycles[0][i],cycles[1][j]] == 1:
-                path = [cycles[0][i],cycles[1][j]]
-            if len(path) > 1:
+    for i in range(len(cycles[0])):  #for each point in the primal cycle
+        for j in range(len(cycles[1])):  #look at each point in every point in mutated cycle
+            if graph[cycles[0][i],cycles[1][j]] == 1:  #If connection exists
+                path = [cycles[0][i],cycles[1][j]] #update path
+            if len(path) > 1:  #See if path of length one found (should be >=?)
                 break
         if len(path) > 1:
                 break
-    if len(path) <= 1:
-        for i in range(len(cycles)):
+    if len(path) <= 1:  #If no path of length one found
+        for i in range(len(cycles)):  #Check this part of the function
             for j in range(len(cycles[i])):
                 path = findSingleCyclePath(graph,cycles[0][i],cycles[1][j])
                 if len(path) > 1:
@@ -335,33 +322,41 @@ def findLengthConnection(cycles,graph):
         warning.warn("Error, graph not connected!")
     return path
 
+#Input: List of tetredron corrdinates
+#Output: matrix graph
+#Author: M, 07/02/15
+#Change Log: none
 def convertTetrahedraToEdges(tetrahedraList):
     print("Get list of edges")
     max = 0
     edgeList = []
     spot = 0
-    for i in range(len(tetrahedraList)):
+    for i in range(len(tetrahedraList)):  #for each tetrahedron in list
         a = tetrahedraList[i][spot]
         b = tetrahedraList[i][spot+1]
         c = tetrahedraList[i][spot+2]
         d = tetrahedraList[i][spot+3]
-        edgeList.append([a-1,b-1])
+        edgeList.append([a-1,b-1])  #append edges of tetrahedron
         edgeList.append([a-1,c-1])
         edgeList.append([a-1,d-1])
         edgeList.append([b-1,c-1])
         edgeList.append([b-1,d-1])
         edgeList.append([c-1,d-1])
-        if d > max:
+        if d > max:  #update max (this is number of edges)
             max = d
     print(edgeList)
     print("Create Graph from list")
-    graph = np.zeros([max,max])
-    for i in range(len(edgeList)):
+    graph = np.zeros([max,max])  #create empty matrix graph
+    for i in range(len(edgeList)):  #use edges found to update matrix graph
        graph[edgeList[i][0],edgeList[i][1]] = 1
        graph[edgeList[i][1],edgeList[i][0]] = 1
     print(graph)
     return graph
 
+#Input: File of manifold
+#Output: basis of manifold
+#Author: M, 6/29/15
+#Change Log: ME, updated and finished 7/1/15
 def main(file = 'manifoldExample4.txt'):
     print("Hello World")
     readFile = open(file)
@@ -374,15 +369,15 @@ def main(file = 'manifoldExample4.txt'):
         tetrahedron.append(data[1][i])
     for i in range(0, len(tetrahedron)):
         tetrahedron[i] = tetrahedron[i].split(',')
-    readFile.close()
+    readFile.close()  #End of file reading syntax
     tetrahedron = [[int(i) for i in tetrahedron[j]] for j in range(len(tetrahedron))] #turns tetrahedron from str to int
     print(tetrahedron)
-    graph = convertTetrahedraToEdges(tetrahedron)
-    sT = buildSpanningTree(graph)
-    dendroid =  np.subtract(graph,sT)
-    cycles = findOddCyclesFromSpanningTree(graph,dendroid,sT)
-    cycles2 = [cycles,0]
-    basis = buildBasisWithEvenCycles(graph,dendroid,sT,cycles2)
+    graph = convertTetrahedraToEdges(tetrahedron)  #gets matrix graph
+    sT = buildSpanningTree(graph)  #Builds spanning tree
+    dendroid =  np.subtract(graph,sT)  #Finds dendroid with bounous edge in dendroid
+    cycles = findOddCyclesFromSpanningTree(graph,dendroid,sT)  #finds primal cycle and removes bounous edge from dendroid
+    cycles2 = [cycles,0]  #prepares cycles in style 2
+    basis = buildBasisWithEvenCycles(graph,dendroid,sT,cycles2)  #gets basis
     print("Basis")
     for i in range(len(basis)):
         print(basis[i])
