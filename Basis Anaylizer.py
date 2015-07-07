@@ -984,6 +984,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
     working = test.isLCSC
     if working == True:
         listOfLengths = []
+        conVar = list(conVar)
         results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
@@ -1011,6 +1012,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
             working = test.isLCSC
             if working == True:
                 listOfLengths = []
+                conVar = list(conVar)
                 results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j,test.LCSCError])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
@@ -1026,6 +1028,7 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
                 # volumes.append(listOfVolumes)
                 break
     if working == False:
+        conVar = list(conVar)
         failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,test.LCSCError])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
@@ -1046,7 +1049,7 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=5
+    numberOfBackgrounds=50
     numberRestarts = 5
     #seed=4741252
     seed = 32190
