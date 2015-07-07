@@ -301,6 +301,7 @@ def advancedOddSearch(graph,cycles):
 #Author: M, 7/1/15
 #Change Log: none
 def findLengthConnection(cycles,graph):
+    warning.warn("Possible broken function being called, check before continued programing!")
     path = []
     for i in range(len(cycles[0])):  #for each point in the primal cycle
         for j in range(len(cycles[1])):  #look at each point in every point in mutated cycle
@@ -365,8 +366,9 @@ def main(file = 'manifoldExample4.txt'):
     data[1] = data[1].strip('[];')
     data[1] = data[1].split('],[')
     tetrahedron = []
-    for i in range(0, len(data[1])):   #List comprehensions
-        tetrahedron.append(data[1][i])
+    # for i in range(0, len(data[1])):   #List comprehensions
+    #     tetrahedron.append(data[1][i])
+    tetrahedron = [data[1][i] for i in range(len(data[1]))]
     for i in range(0, len(tetrahedron)):
         tetrahedron[i] = tetrahedron[i].split(',')
     readFile.close()  #End of file reading syntax
@@ -382,3 +384,5 @@ def main(file = 'manifoldExample4.txt'):
     for i in range(len(basis)):
         print(basis[i])
     return basis
+
+#main()  #This line should be commented out if Basis Anaylizer.py is being run

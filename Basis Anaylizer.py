@@ -1094,7 +1094,7 @@ def main():
         volumeFile.write("\n")
     volumeFile.close()
     notFoundLengthsFile = open("notFoundLengths.txt","w")
-    for i in range(1,len(results[5])):
+    for i in range(0,len(results[5])):
         for j in range(len(results[5][i])):
             notFoundLengthsFile.write(str(results[5][i][j])+" ")
         notFoundLengthsFile.write("\n")
