@@ -191,6 +191,22 @@ class Tetrahedron:
         return finalDecision
     # 10/16/14; Michael; change return(finalDecision) to return finalDecision
 
+
+    def episolonFatTest(self, tableOfEdges,epsilon = .001):
+        volume = self.volumeOfTetrahedron(tableOfEdges)
+        edge1=tableOfEdges[self.vertex1][self.vertex2].edgelength
+        edge2=tableOfEdges[self.vertex1][self.vertex3].edgelength
+        edge3=tableOfEdges[self.vertex1][self.vertex4].edgelength
+        edge4=tableOfEdges[self.vertex2][self.vertex3].edgelength
+        edge5=tableOfEdges[self.vertex2][self.vertex4].edgelength
+        edge6=tableOfEdges[self.vertex3][self.vertex4].edgelength
+        sumOfEdges = edge1+edge2+edge3+edge4+edge5+edge6
+        if volume/3**(1/3) >= epsilon:
+            passTest = True
+        else:
+            passTest = False
+        return passTest
+
     #input: Table of edge objects
     #output: volume of the terahedron
     #author: Erin 6/29/2015
@@ -608,7 +624,7 @@ class metric:
             edgeTable = self.setEdgeLengths(convar)
             self.edgeTable = edgeTable
             tetrahedraList = self.background.tetrahedralist
-            self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+            self.good = not self.advancedCheckLegalTetrahedra2(tetrahedraList,edgeTable)
             if self.good == True:
                 for i in range(len(tetrahedraList)):
                     tetrahedraList[i].calculateDihedralAngles(edgeTable)
@@ -773,6 +789,23 @@ class metric:
                     break  #comment this out if print commands are used
             return everIllegal
 
+    def advancedCheckLegalTetrahedra2(self,listOfTetrahedra,tableOfEdges):
+            #legal = True
+            everIllegal = False
+            for i in range(len(listOfTetrahedra)):
+                legal = listOfTetrahedra[i].checkLegalTetrahedron(tableOfEdges)
+                if legal == False:
+                    #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
+                    everIllegal = True
+                    break  #comment this out if print commands are used
+                legal = listOfTetrahedra[i].episolonFatTest(tableOfEdges)
+                if legal == False:
+                    #print("This Case")
+                    #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
+                    everIllegal = True
+                    break  #comment this out if print commands are used
+            return everIllegal
+
     def findLEHR(self,listOfEdges,tableOfEdges):
             listOfLengths = []
             listOfCurvatures = []
@@ -895,8 +928,8 @@ def generateConvar(size,numberSame):
     conVar = []
     temp = []
     for i in range(size-numberSame):
-        conVar.append(random.randint(-1,3))
-    temp = random.randint(-1,3)
+        conVar.append(random.random()*4-1)
+    temp = random.random()*4-1
     for i in range(numberSame):
         conVar.append(temp)
     conVar[0] = random.random()
@@ -1041,13 +1074,13 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
         for j in range(restarts):
             happyConVar = False
             same = j
-            happyConVar = test.good
+            #happyConVar = test.good
             while(happyConVar == False):
                 conVar = generateConvar(numberVerts,same)
                 test = metric(backgroundfile,triangulation,conVar)
                 test.calLEHR(conVar)
                 happyConVar = test.good
-            conVar = advancedGenerateConvar(numberVerts,backgroundfile,triangulation,conVar)
+            #conVar = advancedGenerateConvar(numberVerts,backgroundfile,triangulation,conVar)
             print(conVar)
             test = metric(backgroundfile,triangulation,conVar)
             test.calLEHR(conVar)
@@ -1058,6 +1091,8 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
             endOpt = time.time()
             conVar = temp.x
             test.calLEHR(conVar)
+            print(conVar)
+            print(" ")
             working = test.isLCSC
             if working == True:
                 listOfLengths = []
@@ -1098,8 +1133,8 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    numberOfBackgrounds=10
-    numberRestarts = 1
+    numberOfBackgrounds=100
+    numberRestarts = 3
     #seed=4741252
     seed = 32190
     #seed=263594
@@ -1119,19 +1154,19 @@ def main():
     for i in range(len(results[1])):
         print(results[1][i])
     foundResultsFile = open("foundResults.txt","w")
-    for i in range(1,len(results[0])):
+    for i in range(0,len(results[0])):
         for j in range(len(results[0][i])):
             foundResultsFile.write(str(results[0][i][j])+" ")
         foundResultsFile.write("\n")
     foundResultsFile.close()
     notfoundResultsFile = open("notFoundResults.txt","w")
-    for i in range(1,len(results[1])):
+    for i in range(0,len(results[1])):
         for j in range(len(results[1][i])):
             notfoundResultsFile.write(str(results[1][i][j])+" ")
         notfoundResultsFile.write("\n")
     notfoundResultsFile.close()
     lengthsFile = open("foundLengths.txt","w")
-    for i in range(1,len(results[3])):
+    for i in range(0,len(results[3])):
         for j in range(len(results[3][i])):
             lengthsFile.write(str(results[3][i][j])+" ")
         lengthsFile.write("\n")
