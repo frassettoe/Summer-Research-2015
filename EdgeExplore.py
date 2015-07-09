@@ -1145,15 +1145,18 @@ class backgroundMetricClass: #need to change so conformal variations are always 
 #         #print(temp)
 
 def exploreMetricViaEdge(met,size):
+    edgeList = []
     print("Find number of Tetrahedra edges appear in")
     numberTetrahedraEachEdgeIsIn = [0]*(size+1)
     numberTetEachEdgeIsInCondnced = findnumberTetrahedraEachEdgeIsIn(met,numberTetrahedraEachEdgeIsIn)
     print("Assign starting lengths")
     edgeLengths = assignLengths(met,numberTetEachEdgeIsInCondnced,[1]*len(numberTetEachEdgeIsInCondnced))
     print("Walk")
-    LEinsteinWalk(met,numberTetEachEdgeIsInCondnced,edgeLengths)
+    edgeLengths = LEinsteinWalk(met,numberTetEachEdgeIsInCondnced,edgeLengths)
     print("Get results")
-    return 0
+    for i in range(len(numberTetEachEdgeIsInCondnced)):
+        edgeList.append([numberTetrahedraEachEdgeIsIn[numberTetEachEdgeIsInCondnced[i]],numberTetEachEdgeIsInCondnced[i],edgeLengths[i]])
+    return edgeList
 
 def LEinsteinWalk(met,numTetEdgeIn,edgeLengths,precision = 50,stepSize = 10,loops = 5):
     startingStepSize = stepSize
@@ -1190,11 +1193,7 @@ def LEinsteinWalk(met,numTetEdgeIn,edgeLengths,precision = 50,stepSize = 10,loop
             stepSize = stepSize/2
             assignLengths(met,numTetEdgeIn,edgeLengths)
             met.calLEHR()
-    print(edgeLengths)
-
-
-
-    return 0
+    return edgeLengths
 
 def findnumberTetrahedraEachEdgeIsIn(met,numTetEdgeIn):
     sizeList = []
@@ -1235,10 +1234,12 @@ def main():
     faceInfo = " "
     print("Hello World!\n")
     lEin = backgroundMetricClass(backgroundfile,triangulation)
-    exploreMetricViaEdge(lEin,numberVertices)
+    results = exploreMetricViaEdge(lEin,numberVertices)
     print("Is L-Einstein: " + str(lEin.LEinstein))
     print("Is L-CSC: " + str(lEin.LCSC))
     print("LEHR: " + str(lEin.LEHR))
+    for i in range(len(results)):
+        print(str(results[i][0])+" Edges appear in " +str(results[i][1])+" Tetrahedra with edge length "+str(results[i][2]))
     # for i in range(len(lEin.edgeList)):
     #     print(lEin.edgetable[lEin.edgeList[i][0]][lEin.edgeList[i][1]].edgelength)
     # results = pentachoronWalk(basis,numberVertices,backgroundfile,triangulation,numberRestarts,numberOfBackgrounds)
