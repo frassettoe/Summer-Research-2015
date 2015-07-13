@@ -87,7 +87,7 @@ class Edge:
 
 
 
-
+#Used in Hessian Calculations
 class face:
     def getAngle(self,c,a,b):  #uses law of cosines to find the angle given three sides of a triangle, returns cosine of angle
         temp = a**2+b**2-c**2
@@ -192,7 +192,10 @@ class Tetrahedron:
         return finalDecision
     # 10/16/14; Michael; change return(finalDecision) to return finalDecision
 
-
+    #Input: table of edges, small positive number
+    #Output: True if episolon Fat test is past, false otherwise
+    #Author: M,07/10/15
+    #Change Log: none
     def episolonFatTest(self, tableOfEdges,epsilon = .001):
         volume = self.volumeOfTetrahedron(tableOfEdges)
         edge1=tableOfEdges[self.vertex1][self.vertex2].edgelength
@@ -630,7 +633,10 @@ class backgroundMetricClass: #need to change so conformal variations are always 
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
     # 07/08/15 Michael, created calLEHR to handle events to check if legal metric and calculate LEHR, check LCSC, ect.
 
-
+#Input:  metric, number of verticies
+#Output: edge List, in form of #Tet, #Tet each edge in, length assigned, these lengths are desinged to maximize LEHR
+#Author: M, 07/10/15
+#Change Log: none
 def exploreMetricViaEdge(met,size):
     edgeList = []
     print("Find number of Tetrahedra edges appear in")
@@ -647,80 +653,77 @@ def exploreMetricViaEdge(met,size):
         edgeList.append([numberTetrahedraEachEdgeIsIn[numberTetEachEdgeIsInCondnced[i]],numberTetEachEdgeIsInCondnced[i],edgeLengths[i]])
     return edgeList
 
+#Input:  Metric, number tetrahedra each edge appears in (condensed form), starting edge lengths, number of steps, starting step size
+#Output: Edge lengths that result is maximum LEHR
+#Author: M, 7/10/15
+#Change Log: none
 def LEinsteinWalk(met,numTetEdgeIn,edgeLengths,precision = 50,stepSize = 10,loops = 5):
-    startingStepSize = stepSize
-    newCoords = [0]*len(edgeLengths)
-    for i in range(precision):
-        LEHR0 = met.LEHR
-        coordStore = copy.deepcopy(edgeLengths)
-        for j in range(len(edgeLengths)):
-            edgeLengths[j] += stepSize
+    newCoords = [0]*len(edgeLengths) #creates place for new edge lengths to be stored
+    for i in range(precision):  #for number of steps
+        LEHR0 = met.LEHR  #get inital LEHR
+        for j in range(len(edgeLengths)):  #for each edge (length)
+            edgeLengths[j] += stepSize  #add step size
+            assignLengths(met,numTetEdgeIn,edgeLengths)  #assign new lengths
+            LEHR1 = met.calLEHR()  #calculate new LEHR for step to right
+            edgeLengths[j] -= 2*stepSize  #change to step to left
             assignLengths(met,numTetEdgeIn,edgeLengths)
-            LEHR1 = met.calLEHR()
-            edgeLengths[j] -= 2*stepSize
+            LEHRMinus1 = met.calLEHR() #calculate LEHR for step to left
+            edgeLengths[j] += stepSize #return to starting step
             assignLengths(met,numTetEdgeIn,edgeLengths)
-            LEHRMinus1 = met.calLEHR()
-            edgeLengths[j] += stepSize
-            assignLengths(met,numTetEdgeIn,edgeLengths)
-            if LEHR1 == 10000:
+            if LEHR1 == 10000:  #make LEHR very small number if illegal metric occurs (this way it is rejected from being a 'good' step)
                 LEHR1 *= -1
             if LEHRMinus1 == 10000:
                 LEHRMinus1 *= -1
-            if LEHR0 >= max(LEHR1,LEHRMinus1):
-                newCoords[j] = edgeLengths[j]
-            elif LEHR1 > LEHRMinus1:
+            if LEHR0 >= max(LEHR1,LEHRMinus1):  #if Orginal LEHR is largest
+                newCoords[j] = edgeLengths[j] #no change in edge length
+            elif LEHR1 > LEHRMinus1: #else if step right is largest, increase edge length by step size
                 newCoords[j] = edgeLengths[j] + stepSize
-            else:
+            else: #else decrease edge length by step size
                 newCoords[j] = edgeLengths[j] - stepSize
         assignLengths(met,numTetEdgeIn,newCoords)
-        newLEHR = met.calLEHR()
-        if newLEHR == 10000:
+        newLEHR = met.calLEHR()  #check new LEHR with all new edge lengths
+        if newLEHR == 10000:  #if illegal, make LEHR small number
             newLEHR *= -1
-        if newLEHR > LEHR0:
+        if newLEHR > LEHR0: #if new LEHR is improvement, take step
             edgeLengths = copy.deepcopy(newCoords)
-        else:
+        else: #otherwise decrease step size
             stepSize = stepSize/2
             assignLengths(met,numTetEdgeIn,edgeLengths)
             met.calLEHR()
     return edgeLengths
-
+#Input: metric, number tetrahedra each edge is in (empty list)
+#Output: Fills number tetrahedra each edge is in (numTetEdgeIn[i] is number of edges, i is number tetrahedra), then returns location of non-zero number of edges
+#Author: M, 07/10/15'
+#Change Log: None
 def findnumberTetrahedraEachEdgeIsIn(met,numTetEdgeIn):
     sizeList = []
-    for i in range(len(met.edgeList)):
-        numTetEdgeIn[len(met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].tetrahedraEdgeIsIn)] += 1
-    met.calLEHR()
-    for i in range(len(numTetEdgeIn)):
-        if numTetEdgeIn[i] != 0:
-            print(str(numTetEdgeIn[i])+" Edges appear in " +str(i)+" Tetrahedra")
-            sizeList.append(i)
+    for i in range(len(met.edgeList)): #Looks through every edge in metric
+        numTetEdgeIn[len(met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].tetrahedraEdgeIsIn)] += 1  #adds edge to numTetEdgeIn
+    met.calLEHR()  #calculate LEHR (why)
+    for i in range(len(numTetEdgeIn)): #for every amount of tetrahedra edges appear in
+        if numTetEdgeIn[i] != 0:  #if not zero edges appear
+            print(str(numTetEdgeIn[i])+" Edges appear in " +str(i)+" Tetrahedra")  #Print
+            sizeList.append(i) #add number of tetrahedra to sizeList
     return sizeList
-
+#Input:  Metric, condencesed edge list of tetrahedra (sizeList from findnumberTetrahedraEachEdgeIsIn), lengths of new edges
+#Output: new edge lengths (unchanged from input)
+#Author: M, 07/10/15
+#Change Log: none
 def assignLengths(met,numTetEdgeIn,coords):
-    for i in range(len(met.edgeList)):
-        length = len(met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].tetrahedraEdgeIsIn)
-        spotInCoords = numTetEdgeIn.index(length)
-        met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].edgelength = coords[spotInCoords]
+    for i in range(len(met.edgeList)):  #For each eddge
+        length = len(met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].tetrahedraEdgeIsIn)  #Find number tetrahedra edge is in
+        spotInCoords = numTetEdgeIn.index(length)  #Find where length is in in condecnsed edge list
+        met.edgetable[met.edgeList[i][0]][met.edgeList[i][1]].edgelength = coords[spotInCoords]  #update length
     return coords
 
 def main():
     start= time.time()
-    storage = str(0)+".txt"
-    LEHRList = []
     numberVertices=15
-    numberOfBackgrounds=1
     numberRestarts = 10
-    #seed=4741252
     seed = 32190
-    #seed=263594
-    #seed=56932684
-    #seed=71293
     random.seed(seed)
-    #seed=9865721
     triangulation='manifoldExample1.txt'
     backgroundfile='backgroundMetric.txt'
-    # basis = BasisBuilder.main(triangulation)
-    #basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
-    faceInfo = " "
     print("Hello World!\n")
     resultList = []
     for i in range(numberRestarts):
