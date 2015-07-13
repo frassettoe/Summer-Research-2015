@@ -1,3 +1,5 @@
+__author__ = 'Michael'
+
 __author__ = 'Erin'
 
 
@@ -11,6 +13,7 @@ import copy
 import numpy
 from scipy.optimize import minimize
 import scipy
+import BasisBuilder
 
 
 class Edge:
@@ -568,10 +571,11 @@ class metric:
                     print(self.edgeTable[i][j].edgelength)
                     print(self.edgeTable[i][j].edgecurvature)
                     print("")
-        print("Vertex\nVertex Curvature")
+        print("Vertex\nVertex Curvature\nSum Of Edges")
         for i in range(self.background.vertexNumber):
             print(i)
             print(self.vertexCurvatureList[i])
+            print(self.sumOfEdgesAtVertexList[i])
             print("")
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
@@ -760,7 +764,7 @@ def Hess(mainMetric, background, triangulation):
     return hessian
 
 
-def modifyBackground(c1,c2,c3,c4,c5,filename):
+def modifyBackground(cList,base,filename):
     backgroundMetric = open(filename,"r")
     storage = backgroundMetric.readlines()
     nameList = []
@@ -776,73 +780,28 @@ def modifyBackground(c1,c2,c3,c4,c5,filename):
         nameList[i] = nameList[i].split(",")
         nameList[i][0] = int(nameList[i][0])
         nameList[i][1] = int(nameList[i][1])
-    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
+        #nameList[i].append(0)  #Possible place for error, does nameList[i]  correspond to basis edge[i]
+    base = numpy.array(base)
+    cList = numpy.array(cList)
+    lengthList = numpy.dot(base.transpose(),cList)
+    for i in range(len(lengthList)):
+        lengthList[i] = math.exp(lengthList[i])**.5
+    #lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
+#    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
     backgroundMetric = open(filename,"w")
     for i in range(len(nameList)):
         backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
+       # print(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
     backgroundMetric.close()
 
-def pentachoronWalk(numberVertices,backgroundfile,triangulation,restarts = 100,numberBackgrounds = 10):
-    results = []
-    failures = []
-    working = True
-    results.append(["c1","c2","c3","c4","c5","f1","f2","f3","f4","f5","LEHR","LCSC","L-Einstein","numberRestarts"])
-    failures.append(["c1","c2","c3","c4","c5","Conformal Variations"])
-    for k in range(numberBackgrounds):
-        c1 = random.random()
-        c2 = random.random()
-        c3 = random.random()
-        c4 = random.random()
-        c5 = random.random()
-        # c1=0
-        # c2=0
-        # c3=0
-        # c4=0
-        # c5=0
-        print("background number "+str(k+1) +" out of " + str(numberBackgrounds))
-        while(math.sqrt(c1**2+c2**2+c3**2+c4**2+c5**2)>.1):
-            c1 = random.random()
-            c2 = random.random()
-            c3 = random.random()
-            c4 = random.random()
-            c5 = random.random()
-        for j in range(restarts):
-            working = True
-            happyConVar = False
-            while(happyConVar == False):
-                conVar = []
-                modifyBackground(c1,c2,c3,c4,c5, "backgroundMetric.txt")
-                for i in range(numberVertices):
-                    #sets conformal variations to 0
-                    #conVar.append(0)
-                    #sets random conformal variations
-                    conVar.append(random.random())
-                orignalConVar = []
-                orignalConVar = copy.deepcopy((conVar))
-                test = metric(backgroundfile,triangulation,conVar)
-                happyConVar = test.good
-            temp = test.optimizeLEHR(conVar)
-            conVar = temp.x
-            working = test.isLCSC
-            if working == True:
-                results.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
-                break
-        if working == False:
-            failures.append([c1,c2,c3,c4,c5,conVar[0],conVar[1],conVar[2],conVar[3],conVar[4],test.LEHR,test.isLCSC])
-            print(temp)
-    return [results,failures]
 
 
 def main():
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=4
-    c1 = 0.170530813
-    c2 = 0.343799591
-    c3 = 0.337730638
-    c4 = 0.08904089
-    c5 = 0.147800697
-    conformalVariations = [ 4.920385485,4.714096706,4.847160096,4.932959297,4.982229411]
+    numberVertices=5
+    cList = [math.log(11/10),0,0,0,0]
+    conformalVariations = [2*math.log(331/330),0,0,0,0]
     #seed=4741252
     #seed=263594
     seed=56932684
@@ -852,8 +811,8 @@ def main():
     backgroundfile='backgroundMetric.txt'
     faceInfo = " "
     print("Hello World!\n")
-
-    modifyBackground(c1,c2,c3,c4,c5,"backgroundMetric.txt")
+    base = BasisBuilder.main(triangulation)
+    modifyBackground(cList,base,"backgroundMetric.txt")
     exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
