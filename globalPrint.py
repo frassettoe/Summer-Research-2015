@@ -542,13 +542,14 @@ class metric:
     def advancedPrint(self,conVar):
         print("Tetrahedran")
         print("Edges in Tetrahedran")
-        print("Dihedral Angles")
+        print("Dihedral Angles\nSum of Dihedral Angles")
         print("Volume")
         print("")
         for i in range (len(self.background.tetrahedralist)):
             print(self.background.tetrahedralist[i].vertexList)
             print(self.background.tetrahedralist[i].edgesintetrahedron)
             print(self.tetrahedraList[i].dihedralanglelist)
+            print(sum(self.tetrahedraList[i].dihedralanglelist))
             edge1=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[1]].edgelength
             edge2=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[2]].edgelength
             edge3=self.edgeTable[self.background.tetrahedralist[i].vertexList[0]][self.background.tetrahedralist[i].vertexList[3]].edgelength
@@ -565,7 +566,7 @@ class metric:
         print("")
         print("Edge")
         print("Edge Length")
-        print("Edge Curvature")
+        print("Edge Curvature\nSum of Dihedral Angles")
         print("")
         for i in range(len(self.edgeTable[0])):
             for j in range(len(self.edgeTable[0])):
@@ -573,12 +574,32 @@ class metric:
                     print("["+str(self.edgeTable[i][j].vertex1)+", "+str(self.edgeTable[i][j].vertex2)+"]")
                     print(self.edgeTable[i][j].edgelength)
                     print(self.edgeTable[i][j].edgecurvature)
+                    curve = self.edgeTable[i][j].edgecurvature
+                    length = self.edgeTable[i][j].edgelength
+                    sumDiAngle = 2*math.pi-curve/length
+                    print(sumDiAngle)
                     print("")
-        print("Vertex\nVertex Curvature\nSum Of Edges")
+
+
+        print("Vertex\nVertex Curvature\nSum Of Edges\nSum Of Diheral Angles")
         for i in range(self.background.vertexNumber):
             print(i+1)
             print(self.vertexCurvatureList[i])
             print(self.sumOfEdgesAtVertexList[i])
+            allDiAngles = []
+            for j in range(len(self.edgeTable[i+1])):
+                if self.edgeTable[i+1][j] != 0:
+                    curve = self.edgeTable[i+1][j].edgecurvature
+                    length = self.edgeTable[i+1][j].edgelength
+                    sumDiAngle = 2*math.pi-curve/length
+                    allDiAngles.append(sumDiAngle)
+                elif self.edgeTable[j][i+1] != 0:
+                    curve = self.edgeTable[j][i+1].edgecurvature
+                    length = self.edgeTable[j][i+1].edgelength
+                    sumDiAngle = 2*math.pi-curve/length
+                    allDiAngles.append(sumDiAngle)
+            print(sum(allDiAngles))
+
             print("")
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
@@ -799,12 +820,13 @@ def modifyBackground(cList,base,filename):
 
 
 
-def main():
+def main(x):
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    cList = [math.log(121/100),0,0,0,0]
-    conformalVariations = [0,0,0,0, 0]
+    #cList = [math.log(121/100),0,0,0,0]
+    cList = [.1,0,0,0,0]
+    conformalVariations = [0,0,0,0, x]
     #seed=4741252
     #seed=263594
     seed=56932684
@@ -819,5 +841,25 @@ def main():
     exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
+    return exploreMetric.LEHR
 
-main()
+main(-0.005610194057226181)
+#main(2*math.log(0.9895905612845789))
+#-0.020927991718053818
+#-0.020927991718053818
+# intial = 0
+# LEHR0 = main(intial)
+# stepSize = 10
+# for i in range(100):
+#     LEHR1 = main(intial+stepSize)
+#     LEHRMinus1 = main(intial-stepSize)
+#     if min(LEHR1,LEHRMinus1) > LEHR0:
+#         stepSize = stepSize/2
+#     elif LEHR1 > LEHRMinus1:
+#         intial = intial-stepSize
+#     else:
+#         intial = intial+stepSize
+#     LEHR0 = main(intial)
+# print(intial)
+# print(LEHR0)
+
