@@ -214,6 +214,65 @@ def getBackgroundManifoldFile(listOfTetrahedra,tableOfEdges,fileName = "backgrou
     outfile.close()
 #
 
+def sortBackgroundMetric(filename = "backgroundMetric.txt"):
+    backgroundMetric = open(filename,"r")
+    storage = backgroundMetric.readlines()
+    nameList = []
+    lengthList = []
+    i = 0
+    while(i < len(storage)-1):
+        #breaks background metric into a names and lengths, such that name at position i corresponds to length and position i
+        nameList.append(storage[i])
+        lengthList.append(float(storage[i+1]))
+        i = i+2
+    # makes files usable
+    for i in range(len(nameList)):
+        nameList[i] = nameList[i].split(",")
+        nameList[i][0] = int(nameList[i][0])
+        nameList[i][1] = int(nameList[i][1])
+        #nameList[i].append(0)  #Possible place for error, does nameList[i]  correspond to basis edge[i]
+    nameListSort(nameList,lengthList)
+    backgroundMetric = open(filename,"w")
+    for i in range(len(nameList)):
+        backgroundMetric.write(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
+       # print(str(nameList[i][0])+","+str(nameList[i][1])+"\n"+str(lengthList[i])+"\n")
+    backgroundMetric.close()
+
+def nameListSort(list,pairList):
+    for i in range(len(list)-1):
+        min = [100,-1]
+        spot = -1
+        for j in range(i,len(list)):
+            if list[j][0] < min[0]:
+                min = list[j]
+                spot = j
+        list[spot] = list[i]
+        list[i] = min
+        storage = pairList[spot]
+        pairList[spot] = pairList[i]
+        pairList[i] = storage
+    firstTerm = list[0][0]
+    outerCounter = 0
+    start = 0
+    for outerCounter in range(len(list)):
+        if list[outerCounter][0] != firstTerm:
+            end = outerCounter-1
+            for i in range(start,end):
+                min = [100,100]
+                spot = -1
+                for j in range(i,end):
+                    if list[j][1] < min[1]:
+                        min = list[j]
+                        spot = j
+                list[spot] = list[i]
+                list[i] = min
+                storage = pairList[spot]
+                pairList[spot] = pairList[i]
+                pairList[i] = storage
+            start = end+1
+            firstTerm = firstTerm+1
+    return list
+
 
 #input: none
 #output: none, super-mega-function that does EVERYTHING! prints LEHR
@@ -221,7 +280,7 @@ def getBackgroundManifoldFile(listOfTetrahedra,tableOfEdges,fileName = "backgrou
 #change log: Michael 10/16/4
 def main():
     print("Hello World")
-    readFile = open('manifoldExample1.txt')
+    readFile = open('manifoldExample4.txt')
     data = readFile.read()        #Prepares file for read in
     data = data.split("facets :=") #Look up strip to remove white space
     data[1] = data[1].strip('[];')
@@ -236,6 +295,7 @@ def main():
     vertexNumber = createTetrahedraList(tetrahedron)
     createEdgeTable(vertexNumber)
     getBackgroundManifoldFile(tetrahedralist,edgetable)
+    sortBackgroundMetric()
 
 
 main()

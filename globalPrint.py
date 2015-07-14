@@ -299,16 +299,19 @@ class backgroundMetricClass: #need to change so conformal variations are always 
             nameList[i][0] = int(nameList[i][0])
             nameList[i][1] = int(nameList[i][1])
         counter = 0
+        for i in range(len(nameList)):
+            listOfEdges.append([nameList[i][0],nameList[i][1]])
         for i in range(len(listOfTetrahedra)):  #for each tetrahedra
             for j in range(len(listOfTetrahedra[i].edgesintetrahedron)):  #look at every edge in the tetrahedra
                     # If edge is not in the the tableOfEdges, add it
                     if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
                         # Assigns edge its name
-                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[counter])
+                        lengthIndex = listOfEdges.index([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[lengthIndex])
                         counter = counter+1  #increases the number of edges counted by one
                         # Adds tetrahedran to list of tetrahedra edge is in
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
-                        listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
+     #HERE                   #listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
                     # adds edge to edgesInTetrahedra list if edge already exists in the table
                     else:
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
@@ -573,7 +576,7 @@ class metric:
                     print("")
         print("Vertex\nVertex Curvature\nSum Of Edges")
         for i in range(self.background.vertexNumber):
-            print(i)
+            print(i+1)
             print(self.vertexCurvatureList[i])
             print(self.sumOfEdgesAtVertexList[i])
             print("")
@@ -800,8 +803,8 @@ def main():
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    cList = [math.log(11/10),0,0,0,0]
-    conformalVariations = [2*math.log(331/330),0,0,0,0]
+    cList = [math.log(121/100),0,0,0,0]
+    conformalVariations = [0,0,0,0, 0]
     #seed=4741252
     #seed=263594
     seed=56932684
