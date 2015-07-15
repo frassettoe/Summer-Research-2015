@@ -367,7 +367,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
     #author: MELT, 10/6/2014
     #change log: 11/18/14 ME
     def fillEdgeTable(self,listOfTetrahedra,tableOfEdges,listOfEdges,fileName = "backgroundMetric.txt"):
-        #Reads in a background metric file and forms the file into a useful format
+                #Reads in a background metric file and forms the file into a useful format
         backgroundMetric = open(fileName,"r")
         storage = backgroundMetric.readlines()
         nameList = []
@@ -384,21 +384,22 @@ class backgroundMetricClass: #need to change so conformal variations are always 
             nameList[i][0] = int(nameList[i][0])
             nameList[i][1] = int(nameList[i][1])
         counter = 0
+        for i in range(len(nameList)):
+            listOfEdges.append([nameList[i][0],nameList[i][1]])
         for i in range(len(listOfTetrahedra)):  #for each tetrahedra
             for j in range(len(listOfTetrahedra[i].edgesintetrahedron)):  #look at every edge in the tetrahedra
                     # If edge is not in the the tableOfEdges, add it
-                    edgeInTetrahedronIndex1 = listOfTetrahedra[i].edgesintetrahedron[j][0]
-                    edgesInTetrahedronIndex2 = listOfTetrahedra[i].edgesintetrahedron[j][1]
-                    if tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2] == 0:
+                    if tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] == 0:
                         # Assigns edge its name
-                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2] = Edge(edgeInTetrahedronIndex1,edgesInTetrahedronIndex2,lengthList[counter])
+                        lengthIndex = listOfEdges.index([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]] = Edge(listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1],lengthList[lengthIndex])
                         counter = counter+1  #increases the number of edges counted by one
                         # Adds tetrahedran to list of tetrahedra edge is in
-                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2].tetrahedraEdgeIsIn.append(i)
-                        listOfEdges.append([edgeInTetrahedronIndex1,edgesInTetrahedronIndex2])
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
+     #HERE                   #listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])  #Moved so list is ordered correctly based on read in
                     # adds edge to edgesInTetrahedra list if edge already exists in the table
                     else:
-                        tableOfEdges[edgeInTetrahedronIndex1][edgesInTetrahedronIndex2].tetrahedraEdgeIsIn.append(i)
+                        tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
     #10/29/14: Michael Added new ability! Function can now be given a backgroundmetric and a list of conformal variations.
     #Both must be given in order for new function attibutes to be used.  Old use without conformal variations and background metric can still be used.
     #11/18/14: Micahel and Erin removed the ability to not take a background metric and conformal variations.

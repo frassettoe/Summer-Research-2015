@@ -311,7 +311,7 @@ class backgroundMetricClass: #need to change so conformal variations are always 
                         counter = counter+1  #increases the number of edges counted by one
                         # Adds tetrahedran to list of tetrahedra edge is in
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
-     #HERE                   #listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])
+     #HERE                   #listOfEdges.append([listOfTetrahedra[i].edgesintetrahedron[j][0],listOfTetrahedra[i].edgesintetrahedron[j][1]])  #Moved so list is ordered correctly based on read in
                     # adds edge to edgesInTetrahedra list if edge already exists in the table
                     else:
                         tableOfEdges[listOfTetrahedra[i].edgesintetrahedron[j][0]][listOfTetrahedra[i].edgesintetrahedron[j][1]].tetrahedraEdgeIsIn.append(i)
@@ -843,8 +843,10 @@ def main(x):
     exploreMetric.advancedPrint(conformalVariations)
     return exploreMetric.LEHR
 
-main(-0.005610194057226181)
-#main(2*math.log(0.9895905612845789))
+#main(-0.005610194057226181)
+#main(2*math.log(0.99719883358))
+main((1+math.exp(.5*.1)+math.exp(-.5*.1))/3)
+print(3/(1+math.exp(.5*.1)+math.exp(-.5*.1)))
 #-0.020927991718053818
 #-0.020927991718053818
 # intial = 0
