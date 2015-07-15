@@ -566,7 +566,7 @@ class metric:
         print("")
         print("Edge")
         print("Edge Length")
-        print("Edge Curvature\nSum of Dihedral Angles")
+        print("Edge Curvature\nSum of Dihedral Angles\nSum Of Dihedral Angles Scaled by Length")
         print("")
         for i in range(len(self.edgeTable[0])):
             for j in range(len(self.edgeTable[0])):
@@ -578,13 +578,16 @@ class metric:
                     length = self.edgeTable[i][j].edgelength
                     sumDiAngle = 2*math.pi-curve/length
                     print(sumDiAngle)
+                    print(sumDiAngle*self.edgeTable[i][j].edgelength)
                     print("")
 
 
         print("Vertex\nVertex Curvature\nSum Of Edges\nSum Of Diheral Angles")
+        sumOfVertexCurve = 0
         for i in range(self.background.vertexNumber):
             print(i+1)
             print(self.vertexCurvatureList[i])
+            sumOfVertexCurve = sumOfVertexCurve+self.vertexCurvatureList[i]
             print(self.sumOfEdgesAtVertexList[i])
             allDiAngles = []
             for j in range(len(self.edgeTable[i+1])):
@@ -601,6 +604,7 @@ class metric:
             print(sum(allDiAngles))
 
             print("")
+        print("Sum of Vertex Curvatures: "+str(sumOfVertexCurve))
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
         print("Is L-Einstein: "+"No Check yet")
@@ -824,8 +828,8 @@ def main(x):
     storage = str(0)+".txt"
     LEHRList = []
     numberVertices=5
-    #cList = [math.log(121/100),0,0,0,0]
-    cList = [.1,0,0,0,0]
+    #cList = [.1,0,0,0,0]
+    cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
     conformalVariations = [0,0,0,0, x]
     #seed=4741252
     #seed=263594
@@ -843,10 +847,13 @@ def main(x):
     exploreMetric.advancedPrint(conformalVariations)
     return exploreMetric.LEHR
 
+
+main(2*math.log(math.sqrt(3)/2))
+#main(.5)
 #main(-0.005610194057226181)
 #main(2*math.log(0.99719883358))
-main((1+math.exp(.5*.1)+math.exp(-.5*.1))/3)
-print(3/(1+math.exp(.5*.1)+math.exp(-.5*.1)))
+# main((1+math.exp(.5*.1)+math.exp(-.5*.1))/3)
+# print(3/(1+math.exp(.5*.1)+math.exp(-.5*.1)))
 #-0.020927991718053818
 #-0.020927991718053818
 # intial = 0
