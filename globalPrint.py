@@ -582,11 +582,12 @@ class metric:
                     print("")
 
 
-        print("Vertex\nVertex Curvature\nSum Of Edges\nSum Of Diheral Angles")
+        print("Vertex\nVertex Curvature\nVertex Curvature Over Sum Of Edge Lengths\nSum Of Edges\nSum Of Diheral Angles")
         sumOfVertexCurve = 0
         for i in range(self.background.vertexNumber):
             print(i+1)
             print(self.vertexCurvatureList[i])
+            print(self.vertexCurvatureList[i]/self.sumOfEdgesAtVertexList[i])
             sumOfVertexCurve = sumOfVertexCurve+self.vertexCurvatureList[i]
             print(self.sumOfEdgesAtVertexList[i])
             allDiAngles = []
@@ -607,7 +608,7 @@ class metric:
         print("Sum of Vertex Curvatures: "+str(sumOfVertexCurve))
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
-        print("Is L-Einstein: "+"No Check yet")
+        print("Is L-Einstein: "+str(self.checkLEinstein(self.edgeTable,self.background.edgeList)))
 
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
@@ -625,6 +626,19 @@ class metric:
                     #print(math.fabs(self.calculateVertexCurvature(i,tableOfEdges)-(self.LEHR * L)))
                     LCSC = False
             return LCSC
+
+    def checkLEinstein(self,tableOfEdges,edgeList,error=.0001):
+        LEinstein = True
+        for i in range(len(self.background.edgeList)):
+                edgeSpot1 = edgeList[i][0]
+                edgeSpot2 = edgeList[i][1]
+        for i in range(len(edgeList)):
+            curvature=tableOfEdges[edgeSpot1][edgeSpot2].edgecurvature
+            LEHRl=tableOfEdges[edgeSpot1][edgeSpot2].edgelength
+            LEHRl=LEHRl*self.LEHR
+            if math.fabs(curvature-LEHRl)> error:
+                LEinstein= False
+        return LEinstein
 
     def optimizeLEHR(self,convar):
         res = minimize(self.calLEHR, convar ,method = 'nelder-mead',options={'disp':False})
@@ -812,8 +826,9 @@ def modifyBackground(cList,base,filename):
     base = numpy.array(base)
     cList = numpy.array(cList)
     lengthList = numpy.dot(base.transpose(),cList)
+    lengthList = lengthList.tolist()
     for i in range(len(lengthList)):
-        lengthList[i] = math.exp(lengthList[i])**.5
+        lengthList[i] = math.exp(lengthList[i]*.5)
     #lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
 #    lengthList = [(math.exp(c1-c4+c5))**.5,(math.exp(c1))**.5,(math.exp(-c2))**.5,(math.exp(-c1+c4-c5))**.5,(math.exp(-c2+c3+c4))**.5,(math.exp(-c5))**.5,(math.exp(-c3))**.5,(math.exp(-c1+c2-c3))**.5,(math.exp(-c4))**.5,(math.exp(c1+c3+c5))**.5]
     backgroundMetric = open(filename,"w")
@@ -827,35 +842,38 @@ def modifyBackground(cList,base,filename):
 def main(x):
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=5
+    numberVertices=6
     #cList = [.1,0,0,0,0]
-    cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
-    conformalVariations = [0,0,0,0, x]
+    #cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
+    # cList = [2*math.log(1.1),0,0,0,0]
+    # conformalVariations = [0,0,0,0, x]
+    conformalVariations = [-.065052,-.065052,-.065052,-.065052,-.065052,-.065052]
+    cList = [.130104,-.086736,.130104,-.086736,.130104,-.086736,-.086736,.130104,-.086736]
     #seed=4741252
     #seed=263594
     seed=56932684
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample4.txt'
+    triangulation='manifoldExample5.txt'
     backgroundfile='backgroundMetric.txt'
     faceInfo = " "
     print("Hello World!\n")
     base = BasisBuilder.main(triangulation)
-    modifyBackground(cList,base,"backgroundMetric.txt")
-    exploreMetric = metric("backgroundMetric.txt","manifoldExample4.txt",conformalVariations)
+    modifyBackground(cList,base,backgroundfile)
+    exploreMetric = metric(backgroundfile,triangulation,conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
     return exploreMetric.LEHR
 
 
-main(2*math.log(math.sqrt(3)/2))
-#main(.5)
-#main(-0.005610194057226181)
-#main(2*math.log(0.99719883358))
-# main((1+math.exp(.5*.1)+math.exp(-.5*.1))/3)
-# print(3/(1+math.exp(.5*.1)+math.exp(-.5*.1)))
-#-0.020927991718053818
-#-0.020927991718053818
+main(2*math.log(1.3))
+# #main(.5)
+# #main(-0.005610194057226181)
+# #main(2*math.log(0.99719883358))
+# # main((1+math.exp(.5*.1)+math.exp(-.5*.1))/3)
+# # print(3/(1+math.exp(.5*.1)+math.exp(-.5*.1)))
+# #-0.020927991718053818
+# #-0.020927991718053818
 # intial = 0
 # LEHR0 = main(intial)
 # stepSize = 10

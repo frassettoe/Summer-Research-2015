@@ -255,8 +255,9 @@ def nameListSort(list,pairList):
     outerCounter = 0
     start = 0
     for outerCounter in range(len(list)):
+        veiw = list[outerCounter][0]
         if list[outerCounter][0] != firstTerm:
-            end = outerCounter-1
+            end = outerCounter
             for i in range(start,end):
                 min = [100,100]
                 spot = -1
@@ -269,7 +270,7 @@ def nameListSort(list,pairList):
                 storage = pairList[spot]
                 pairList[spot] = pairList[i]
                 pairList[i] = storage
-            start = end+1
+            start = end
             firstTerm = firstTerm+1
     return list
 
@@ -280,7 +281,7 @@ def nameListSort(list,pairList):
 #change log: Michael 10/16/4
 def main():
     print("Hello World")
-    readFile = open('manifoldExample4.txt')
+    readFile = open('manifoldExample5.txt')
     data = readFile.read()        #Prepares file for read in
     data = data.split("facets :=") #Look up strip to remove white space
     data[1] = data[1].strip('[];')

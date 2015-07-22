@@ -914,6 +914,7 @@ def modifyBackground(cList,base,filename):
     base = numpy.array(base)
     cList = numpy.array(cList)
     lengthList = numpy.dot(base.transpose(),cList)
+    lengthList = lengthList.tolist()
     for i in range(len(lengthList)):
         lengthList[i] = math.exp(lengthList[i])**.5
     #lengthList = [(math.exp(lengthList[i]))**.5 for i in lengthList]
@@ -1133,7 +1134,7 @@ def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=5
+    numberVertices=6
     numberOfBackgrounds=100
     numberRestarts = 3
     #seed=4741252
@@ -1143,7 +1144,7 @@ def main():
     #seed=71293
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample4.txt'
+    triangulation='manifoldExample5.txt'
     backgroundfile='backgroundMetric.txt'
     basis = BasisBuilder.main(triangulation)
     #basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
