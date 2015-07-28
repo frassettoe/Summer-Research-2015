@@ -544,6 +544,7 @@ class metric:
         print("Edges in Tetrahedran")
         print("Dihedral Angles\nSum of Dihedral Angles")
         print("Volume")
+        print("Sum of Face Angles")
         print("")
         for i in range (len(self.background.tetrahedralist)):
             print(self.background.tetrahedralist[i].vertexList)
@@ -558,6 +559,10 @@ class metric:
             edge6=self.edgeTable[self.background.tetrahedralist[i].vertexList[2]][self.background.tetrahedralist[i].vertexList[3]].edgelength
             det = (-2)*(edge1**4)*(edge6**2)-(2)*(edge1**2)*(edge2**2)*(edge4**2)+(2)*(edge1**2)*(edge2**2)*(edge5**2)+(2)*(edge1**2)*(edge2**2)*(edge6**2)+(2)*(edge1**2)*(edge3**2)*(edge4**2)-(2)*(edge1**2)*(edge3**2)*(edge5**2)+(2)*(edge1**2)*(edge3**2)*(edge6**2)+(2)*(edge1**2)*(edge4**2)*(edge6**2)+(2)*(edge1**2)*(edge5**2)*(edge6**2)-(2)*(edge1**2)*(edge6**4)-(2)*(edge2**4)*(edge5**2)+(2)*(edge2**2)*(edge3**2)*(edge4**2)+(2)*(edge2**2)*(edge3**2)*(edge5**2)-(2)*(edge2**2)*(edge3**2)*(edge6**2)+(2)*(edge2**2)*(edge4**2)*(edge5**2)-(2)*(edge2**2)*(edge5**4)+(2)*(edge2**2)*(edge5**2)*(edge6**2)-(2)*(edge3**4)*(edge4**2)-(2)*(edge3**2)*(edge4**4)+(2)*(edge3**2)*(edge4**2)*(edge5**2)+(2)*(edge3**2)*(edge4**2)*(edge6**2)-(2)*(edge4**2)*(edge5**2)*(edge6**2)
             print((det/288)**.5)
+            sumFaceAngles = 0
+            for j in range(len(self.tetrahedraList[i].faceList)):
+                sumFaceAngles += sum(self.tetrahedraList[i].faceList[j].angleList)
+            print(sumFaceAngles)
             print("")
         print("Edge List")
         print("")
@@ -582,7 +587,7 @@ class metric:
                     print("")
 
 
-        print("Vertex\nVertex Curvature\nVertex Curvature Over Sum Of Edge Lengths\nSum Of Edges\nSum Of Diheral Angles")
+        print("Vertex\nVertex Curvature\nVertex Curvature Over Sum Of Edge Lengths\nSum Of Edges\nSum Of Diheral Angles\nSum of Face Angles")
         sumOfVertexCurve = 0
         for i in range(self.background.vertexNumber):
             print(i+1)
@@ -603,7 +608,13 @@ class metric:
                     sumDiAngle = 2*math.pi-curve/length
                     allDiAngles.append(sumDiAngle)
             print(sum(allDiAngles))
-
+            sumOfFaceAngles = 0
+            for j in range(len(self.tetrahedraList)):
+                for k in range(len(self.tetrahedraList[j].faceList)):
+                    if i+1 in self.tetrahedraList[j].faceList[k].vertexList:
+                        spot = self.tetrahedraList[j].faceList[k].vertexList.index(i+1)
+                        sumOfFaceAngles += self.tetrahedraList[j].faceList[k].angleList[spot]
+            print(sumOfFaceAngles)
             print("")
         print("Sum of Vertex Curvatures: "+str(sumOfVertexCurve))
         print("LEHR: "+str(self.calLEHR(conVar)))
@@ -698,6 +709,11 @@ class metric:
                     self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength/2
         return edgeLengthTable
 
+    def getFaceInfo(self,edgeTable,tetrahedraLIst):
+        for i in range(len(tetrahedraLIst)):
+            tetrahedraLIst[i].initalizeTriangles(edgeTable)
+        return 0
+
     def __init__(self,backgroundFile,triagulation,convar):
         self.background = backgroundMetricClass(backgroundFile,triagulation)
         self.totalEdgeLength = 0
@@ -709,6 +725,7 @@ class metric:
         self.edgeTable = []
         self.LEHR = self.calLEHR(convar)
         self.minima = []
+        self.getFaceInfo(self.edgeTable,self.tetrahedraList)
 
 
 def ToReducedRowEchelonForm( M):
@@ -847,8 +864,8 @@ def main(x):
     #cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
     # cList = [2*math.log(1.1),0,0,0,0]
     # conformalVariations = [0,0,0,0, x]
-    conformalVariations = [-.065052,-.065052,-.065052,-.065052,-.065052,-.065052]
-    cList = [.130104,-.086736,.130104,-.086736,.130104,-.086736,-.086736,.130104,-.086736]
+    conformalVariations = [0.0098725102281612669, -0.024804299660461947, -0.038808096379086658, 0.00024891785985072011, 0.04307501631120822, 0.003014329809748733]
+    cList = [-0.3491473123359483, -0.08502450488525115, -0.394170749003528, 0.1316734376555171, -0.47460353336503747, 0.44007075278156027, 0.39875525872830064, 0.1871459259803374, -0.38092127371776663]
     #seed=4741252
     #seed=263594
     seed=56932684
