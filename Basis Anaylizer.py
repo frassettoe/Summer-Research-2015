@@ -104,7 +104,7 @@ class face:
         edge2 = self.edgeLength[1]
         edge3 = self.edgeLength[2]
         self.angleList = [math.acos(self.getAngle(edge1,edge2,edge3)),math.acos(self.getAngle(edge2,edge1,edge3)),math.acos(self.getAngle(edge3,edge2,edge1))]
-        #self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]   #333 used in hessian
+        self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]   #333 used in hessian
 
 
 class Tetrahedron:
@@ -597,23 +597,23 @@ class backgroundMetricClass: #need to change so conformal variations are always 
         if illegalTetrahedrons == True:  #if illegal found, further calculations cannot be done and program stops
             self.good = False
         else:
-         #   for i in range(len(self.tetrahedralist)): #333 hessian
-         #       self.tetrahedralist[i].initalizeTriangles(self.edgetable)  #finds information about triangles within tetrahedra (333 used in hessian calculations only)
-            self.totalLength = self.findTotalEdgeLength(self.edgetable)  #gets total edge length of all edges in metric
-            for i in range(len(self.tetrahedralist)):  #for each tetrahedra
-                self.tetrahedralist[i].calculateDihedralAngles(self.edgetable)  #finds dihedral angles
-                #self.tetrahedralist[i].getTetCenDis()  #333 for hessian
-            for i in range(len(self.edgeList)):  #for each edge
+           for i in range(len(self.tetrahedralist)): #333 hessian
+               self.tetrahedralist[i].initalizeTriangles(self.edgetable)  #finds information about triangles within tetrahedra (333 used in hessian calculations only)
+               self.totalLength = self.findTotalEdgeLength(self.edgetable)  #gets total edge length of all edges in metric
+           for i in range(len(self.tetrahedralist)):  #for each tetrahedra
+               self.tetrahedralist[i].calculateDihedralAngles(self.edgetable)  #finds dihedral angles
+               self.tetrahedralist[i].getTetCenDis()  #333 for hessian
+           for i in range(len(self.edgeList)):  #for each edge
                 edge1 = self.edgeList[i][0]
                 edge2 = self.edgeList[i][1]
                 self.edgetable[edge1][edge2].calculateEdgeCurvature(self.tetrahedralist)  #finds edge curvature
-                #self.edgetable[edge1][edge2].calculateEdgeLengthStar(self.tetrahedralist)  #333 used in hessian
-           # self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)  #333 used in hessian
-            self.LEHR = self.findLEHR(self.edgeList,self.edgetable)  #finds LEHR
-            #self.showEdgeTable(self.edgetable)
-            self.LCSC = self.checkLCSC(self.edgetable)  #checks if LCSC and L-Einstein met
-            self.LEinstein = self.checkLEinstein()
-            self.good = True
+                self.edgetable[edge1][edge2].calculateEdgeLengthStar(self.tetrahedralist)  #333 used in hessian
+           self.edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(self.edgetable,self.vertexNumber)  #333 used in hessian
+           self.LEHR = self.findLEHR(self.edgeList,self.edgetable)  #finds LEHR
+           #self.showEdgeTable(self.edgetable)
+           self.LCSC = self.checkLCSC(self.edgetable)  #checks if LCSC and L-Einstein met
+           self.LEinstein = self.checkLEinstein()
+           self.good = True
     # 10/16/14 Michael; replaced for loop to check legal tetrahedron to advancedcheckLegalTetrahedron command
 
 class metric:
@@ -725,9 +725,9 @@ class metric:
             for i in range(1,self.background.vertexNumber+1):
                 self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
             edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(edgeTable,self.background.vertexNumber)
-            result = self.findLEHR(edgeList,edgeTable)
-            self.LEHR = result
-            self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+            # result = self.findLEHR(edgeList,edgeTable)
+            # self.LEHR = result
+            # self.isLCSC = self.checkLCSC(edgeTable,edgeList)
         else:
             result = 1000
         hessian = []
@@ -744,6 +744,7 @@ class metric:
                     hessian[i][j] = self.hessianDifferent(edgeTable,i+1,j+1)
         self.makePosDef(numpy.asarray(hessian),.1)
         return hessian
+
 
     def hessianDifferent(self,edgetable,vertex1,vertex2):
         if vertex1 > vertex2:
@@ -1029,6 +1030,7 @@ def legalBackground(cList,base,background,triagulation):
        return [False,0]
     else:
         return [True,test]
+
 def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgrounds,results,times,lengths,failures,volumes,failedlengths,k,restarts):
     startBackground = time.time()
     happyBackground = [False,0]
@@ -1064,7 +1066,9 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
     if working == True:
         listOfLengths = []
         conVar = list(conVar)
-        results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError])
+        Hessian = test.hess(conVar)
+        evals = list(numpy.linalg.eigvals(Hessian))
+        results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError,evals])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,0,0])
         for i in range(len(test.edgeTable)):
@@ -1099,7 +1103,9 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
             if working == True:
                 listOfLengths = []
                 conVar = list(conVar)
-                results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,j,test.LCSCError])
+                Hessian = test.hess(conVar)
+                evals = list(numpy.linalg.eigvals(Hessian))
+                results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError,evals])
                 endBackground = time.time()
                 times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt,endConVar-startConar,j])
                 for i in range(len(test.edgeTable)):
@@ -1115,7 +1121,9 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
                 break
     if working == False:
         conVar = list(conVar)
-        failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,test.LCSCError])
+        Hessian = test.hess(conVar)
+        evals = list(numpy.linalg.eigvals(Hessian))
+        failures.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,test.LCSCError,evals])
         endBackground = time.time()
         times.append([endBackground-startBackground,endModuli-startModuli,endOpt-startOpt])
         listOfVolumes = []
@@ -1134,9 +1142,9 @@ def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=6
-    numberOfBackgrounds=100
-    numberRestarts = 3
+    numberVertices=4
+    numberOfBackgrounds=10
+    numberRestarts = 20
     #seed=4741252
     seed = 32190
     #seed=263594
@@ -1144,8 +1152,10 @@ def main():
     #seed=71293
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample5.txt'
+    triangulation='manifoldExample3.txt'
     backgroundfile='backgroundMetric.txt'
+    #Weird New Basis
+    #basis = numpy.array([[1,1,-1,0,-1,-1,0,0,0,0,0,0,0,1,0],[1,1,-1,-1,0,-1,0,0,0,0,0,0,1,0,0],[1,0,0,0,-1,-1,0,0,0,0,0,1,0,0,0],[1,0,0,-1,0,-1,0,0,0,0,1,0,0,0,0],[1,0,-1,0,0,-1,0,0,0,1,0,0,0,0,0],[0,1,0,0,-1,-1,0,0,1,0,0,0,0,0,0],[0,1,0,-1,0,-1,0,1,0,0,0,0,0,0,0],[0,1,-1,0,0,-1,1,0,0,0,0,0,0,0,0],[1.5,1.5,-1,-1,-1,-1.5,0,0,0,0,0,0,0,0,1]])
     basis = BasisBuilder.main(triangulation)
     #basis = numpy.array([[1,1,0,-1,0,0,0,-1,0,1],[0,0,-1,0,-1,0,0,1,0,0],[0,0,0,0,1,0,-1,-1,0,1],[-1,0,0,1,1,0,0,0,-1,0],[1,0,0,-1,0,-1,0,0,0,1]])
     faceInfo = " "
