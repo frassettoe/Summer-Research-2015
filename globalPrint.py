@@ -859,31 +859,31 @@ def modifyBackground(cList,base,filename):
 def main(x):
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=6
+    numberVertices=4
     #cList = [.1,0,0,0,0]
     #cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
     # cList = [2*math.log(1.1),0,0,0,0]
-    # conformalVariations = [0,0,0,0, x]
-    conformalVariations = [0.0098725102281612669, -0.024804299660461947, -0.038808096379086658, 0.00024891785985072011, 0.04307501631120822, 0.003014329809748733]
-    cList = [-0.3491473123359483, -0.08502450488525115, -0.394170749003528, 0.1316734376555171, -0.47460353336503747, 0.44007075278156027, 0.39875525872830064, 0.1871459259803374, -0.38092127371776663]
+    conformalVariations = [0,0,0,0, x]
+    #conformalVariations = [0.0098725102281612669, -0.024804299660461947, -0.038808096379086658, 0.00024891785985072011, 0.04307501631120822, 0.003014329809748733]
+    #cList = [-0.3491473123359483, -0.08502450488525115, -0.394170749003528, 0.1316734376555171, -0.47460353336503747, 0.44007075278156027, 0.39875525872830064, 0.1871459259803374, -0.38092127371776663]
     #seed=4741252
     #seed=263594
     seed=56932684
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample5.txt'
+    triangulation='manifoldExample3.txt'
     backgroundfile='backgroundMetric.txt'
     faceInfo = " "
     print("Hello World!\n")
     base = BasisBuilder.main(triangulation)
-    modifyBackground(cList,base,backgroundfile)
+    #modifyBackground(cList,base,backgroundfile)
     exploreMetric = metric(backgroundfile,triangulation,conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
     return exploreMetric.LEHR
 
 
-main(2*math.log(1.3))
+main(0)
 # #main(.5)
 # #main(-0.005610194057226181)
 # #main(2*math.log(0.99719883358))

@@ -66,7 +66,7 @@ class Edge:
         starList = []
         for i in range (len(self.tetrahedraEdgeIsIn)):
             tetLocation = self.tetrahedraEdgeIsIn[i]
-            list  = copy.deepcopy(listOfTetrahedra[tetLocation].vertexList)
+            list = copy.deepcopy(listOfTetrahedra[tetLocation].vertexList)
             list.sort()
             iLoc = list[list.index(self.vertex1)]
             jLoc = list[list.index(self.vertex2)]
@@ -99,12 +99,12 @@ class face:
 
     def __init__(self, edgeTable, vertex1 = 1, vertex2 = 2, vertex3 = 3):
         self.vertexList = [vertex1,vertex2,vertex3]
-        self.edgeLength = [edgeTable[vertex2][vertex3].edgelength,edgeTable[vertex1][vertex3].edgelength,edgeTable[vertex1][vertex2].edgelength]  #edgeLength[i] is opposite to vertex i-1
-        edge1 = self.edgeLength[0]
-        edge2 = self.edgeLength[1]
-        edge3 = self.edgeLength[2]
-        self.angleList = [math.acos(self.getAngle(edge1,edge2,edge3)),math.acos(self.getAngle(edge2,edge1,edge3)),math.acos(self.getAngle(edge3,edge2,edge1))]
-        self.hList = [self.getTriCenDis(edge3,edge1,self.angleList[1]),self.getTriCenDis(edge1,edge2,self.angleList[2]),self.getTriCenDis(edge2,edge3,self.angleList[0])]   #333 used in hessian
+        self.edgeLength = [edgeTable[vertex2][vertex3].edgelength,edgeTable[vertex1][vertex3].edgelength,edgeTable[vertex1][vertex2].edgelength]  #edgeLength[i] is opposite to vertex i+1
+        edge12 =self.edgeLength[2]
+        edge13 = self.edgeLength[1]
+        edge23 = self.edgeLength[0]
+        self.angleList = [math.acos(self.getAngle(edge12,edge13,edge23)),math.acos(self.getAngle(edge13,edge12,edge23)),math.acos(self.getAngle(edge23,edge12,edge13))]  # angleList[i] is angle at vertex i+1
+        self.hList = [self.getTriCenDis(edge13,edge12,self.angleList[0]),self.getTriCenDis(edge12,edge13,self.angleList[0]),self.getTriCenDis(edge12,edge23,self.angleList[1])]   #333 used in hessian  #hij,k is in same position as edge ij in edge length list
 
 
 class Tetrahedron:
@@ -139,7 +139,7 @@ class Tetrahedron:
     #
 
 
-    def initalizeTriangles(self,tableOfEdges):
+    def initalizeTriangles(self,tableOfEdges):  #Set up so faceList[i-1] is face opposite vertex i
         self.faceList[0] = face(tableOfEdges,self.vertex2,self.vertex3,self.vertex4)
         self.faceList[1] = face(tableOfEdges,self.vertex1,self.vertex3,self.vertex4)
         self.faceList[2] = face(tableOfEdges,self.vertex1,self.vertex2,self.vertex4)
@@ -267,10 +267,10 @@ class Tetrahedron:
          return result
 
     def getTetCenDis(self):
-        self.tetCenDisList[0] = self.calTetCenDis(self.vertex2,self.vertex3,self.vertex4,self.vertex1)
-        self.tetCenDisList[1] = self.calTetCenDis(self.vertex1,self.vertex3,self.vertex4,self.vertex2)
-        self.tetCenDisList[2] = self.calTetCenDis(self.vertex2,self.vertex4,self.vertex1,self.vertex3)
-        self.tetCenDisList[3] = self.calTetCenDis(self.vertex3,self.vertex2,self.vertex1,self.vertex4)
+        self.tetCenDisList[0] = self.calTetCenDis(self.vertex1,self.vertex2,self.vertex3,self.vertex4)
+        self.tetCenDisList[1] = self.calTetCenDis(self.vertex1,self.vertex2,self.vertex4,self.vertex3)
+        self.tetCenDisList[2] = self.calTetCenDis(self.vertex1,self.vertex3,self.vertex4,self.vertex2)
+        self.tetCenDisList[3] = self.calTetCenDis(self.vertex2,self.vertex3,self.vertex4,self.vertex1)
 
     #input: Eij,Eik,Eil,Ejk,Ejl,Ekl, numbers that represent edge lengths of a tetrahedron, edge Eij is the dihedral angle
     #output: temp, result of applying dihedral angle formula
@@ -766,7 +766,7 @@ class metric:
     def hessianSame(self,edgeStarOverEdgeTotal,vertex):
         partial = 2*edgeStarOverEdgeTotal[vertex-1]/self.totalEdgeLength
         partial = partial + self.vertexCurvatureList[vertex-1]/(2*self.totalEdgeLength)
-        partial = partial - self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(4*self.totalEdgeLength)
+        partial = partial - self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]/(4*self.totalEdgeLength)
         partial = partial - self.sumOfEdgesAtVertexList[vertex-1]*self.vertexCurvatureList[vertex-1]/(self.totalEdgeLength**2)
         partial = partial + self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(2*self.totalEdgeLength**2)
         return partial
@@ -829,14 +829,16 @@ class metric:
         return vertexCurvature
 
     def setEdgeLengths(self,convar):
+        self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
+        self.totalEdgeLength = 0
         edgeLengthTable = copy.deepcopy(self.background.edgetable)
         for i in range(len(edgeLengthTable)):
             for j in range(len(edgeLengthTable[i])):
                 if(edgeLengthTable[i][j]!=0):
                     length = edgeLengthTable[i][j].edgelength
-                    lengthOverTwo = length/2
+                    lengthOverTwo = length
                     edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*length
-                    self.totalEdgeLength = self.totalEdgeLength + length/2
+                    self.totalEdgeLength = self.totalEdgeLength + length
                     self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+lengthOverTwo
                     self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+lengthOverTwo
         return edgeLengthTable
@@ -1049,7 +1051,8 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
         #     print("NOt")
         cList = []
         for i in range(len(basis)):
-            cList.append(random.random()-.5)
+            cList.append(random.random())
+            #cList.append(0)
         squares = [i**2 for i in cList]
         happyBackground = legalBackground(cList, basis,backgroundfile,triangulation)
     endModuli = time.time()
@@ -1067,6 +1070,9 @@ def walkThroughBack(basis,numberVerts,backgroundfile,triangulation,numberBackgro
         listOfLengths = []
         conVar = list(conVar)
         Hessian = test.hess(conVar)
+        Grad = test.grad(conVar)
+        print(Grad)
+        print(numpy.array(Hessian))
         evals = list(numpy.linalg.eigvals(Hessian))
         results.append([cList,conVar,test.LEHR,test.isLCSC,test.isLEinstein,-1,test.LCSCError,evals])
         endBackground = time.time()
@@ -1142,9 +1148,9 @@ def main():
     start= time.time()
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=4
+    numberVertices=5
     numberOfBackgrounds=10
-    numberRestarts = 20
+    numberRestarts = 3
     #seed=4741252
     seed = 32190
     #seed=263594
@@ -1152,7 +1158,7 @@ def main():
     #seed=71293
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample3.txt'
+    triangulation='manifoldExample4.txt'
     backgroundfile='backgroundMetric.txt'
     #Weird New Basis
     #basis = numpy.array([[1,1,-1,0,-1,-1,0,0,0,0,0,0,0,1,0],[1,1,-1,-1,0,-1,0,0,0,0,0,0,1,0,0],[1,0,0,0,-1,-1,0,0,0,0,0,1,0,0,0],[1,0,0,-1,0,-1,0,0,0,0,1,0,0,0,0],[1,0,-1,0,0,-1,0,0,0,1,0,0,0,0,0],[0,1,0,0,-1,-1,0,0,1,0,0,0,0,0,0],[0,1,0,-1,0,-1,0,1,0,0,0,0,0,0,0],[0,1,-1,0,0,-1,1,0,0,0,0,0,0,0,0],[1.5,1.5,-1,-1,-1,-1.5,0,0,0,0,0,0,0,0,1]])
