@@ -571,6 +571,7 @@ class metric:
         print("")
         print("Edge")
         print("Edge Length")
+        print("Edge Length Star")
         print("Edge Curvature\nSum of Dihedral Angles\nSum Of Dihedral Angles Scaled by Length")
         print("")
         for i in range(len(self.edgeTable[0])):
@@ -578,6 +579,7 @@ class metric:
                 if self.edgeTable[i][j] != 0:
                     print("["+str(self.edgeTable[i][j].vertex1)+", "+str(self.edgeTable[i][j].vertex2)+"]")
                     print(self.edgeTable[i][j].edgelength)
+                    print(self.edgeTable[i][j].edgelengthStar)
                     print(self.edgeTable[i][j].edgecurvature)
                     curve = self.edgeTable[i][j].edgecurvature
                     length = self.edgeTable[i][j].edgelength
@@ -616,10 +618,126 @@ class metric:
                         sumOfFaceAngles += self.tetrahedraList[j].faceList[k].angleList[spot]
             print(sumOfFaceAngles)
             print("")
-        print("Sum of Vertex Curvatures: "+str(sumOfVertexCurve))
+        print("Gradient")
+        print(self.grad(conVar))
+        print("Hessian")
+        print(numpy.array(self.hess(conVar)))
+        print("Eigen Values")
+        print(numpy.linalg.eigvals(numpy.array(self.hess(conVar))))
+        print("\nSum of Vertex Curvatures: "+str(sumOfVertexCurve))
         print("LEHR: "+str(self.calLEHR(conVar)))
         print("Is LCSC: "+str(self.isLCSC))
         print("Is L-Einstein: "+str(self.checkLEinstein(self.edgeTable,self.background.edgeList)))
+
+        #not optimized
+    def grad(self,convar):
+        Grad = []
+        self.calLEHR(convar)
+        for i in range(self.background.vertexNumber):
+                #creating the gradient
+                temp = self.vertexCurvatureList[i]
+                temp = temp-self.LEHR*.5*self.sumOfEdgesAtVertexList[i]
+                temp = temp/self.totalEdgeLength
+                Grad.append(temp)
+        return numpy.array(Grad)
+
+    #not optimized, or any hessian related functions
+    def hess(self, convar):
+        self.vertexCurvatureList = []
+        edgeList = copy.deepcopy(self.background.edgeList)
+        edgeTable = self.setEdgeLengths(convar)
+        tetrahedraList = copy.deepcopy(self.background.tetrahedralist)
+        self.good = not self.advancedCheckLegalTetrahedra(tetrahedraList,edgeTable)
+        if self.good == True:
+            for i in range(len(tetrahedraList)):
+                tetrahedraList[i].initalizeTriangles(edgeTable)
+                tetrahedraList[i].calculateDihedralAngles(edgeTable)
+                tetrahedraList[i].getTetCenDis()
+            for i in range(len(edgeList)):
+                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeCurvature(tetrahedraList)
+                edgeTable[edgeList[i][0]][edgeList[i][1]].calculateEdgeLengthStar(tetrahedraList)
+            for i in range(1,self.background.vertexNumber+1):
+                self.vertexCurvatureList.append(self.calculateVertexCurvature(i,edgeTable))
+            edgeStarOverEdgeTotal = self.getEdgeStarOverEdgeSums(edgeTable,self.background.vertexNumber)
+            # result = self.findLEHR(edgeList,edgeTable)
+            # self.LEHR = result
+            # self.isLCSC = self.checkLCSC(edgeTable,edgeList)
+        else:
+            result = 1000
+        hessian = []
+        for i in range(self.background.vertexNumber):
+        #creating the hessian
+            hessian.append([0]*self.background.vertexNumber)
+            for j in range(self.background.vertexNumber):
+                if edgeTable[i+1][j+1] == 0 and edgeTable[j+1][i+1] == 0 and i!=j:
+                    if edgeTable[i+1][j+1] == 0:
+                        hessian[i][j] = 0
+                elif i == j:
+                    hessian[i][j] = self.hessianSame(edgeStarOverEdgeTotal,i+1)
+                else:
+                    hessian[i][j] = self.hessianDifferent(edgeTable,i+1,j+1)
+        self.makePosDef(numpy.asarray(hessian),.1)
+        return hessian
+
+
+    def hessianDifferent(self,edgetable,vertex1,vertex2):
+        if vertex1 > vertex2:
+            lijStarOverlij = edgetable[vertex2][vertex1].edgelengthStar/edgetable[vertex2][vertex1].edgelength
+            edgeCurvature = edgetable[vertex2][vertex1].edgecurvature
+            edgeLength = edgetable[vertex2][vertex1].edgelength
+        else:
+            lijStarOverlij = edgetable[vertex1][vertex2].edgelengthStar/edgetable[vertex1][vertex2].edgelength
+            edgeCurvature = edgetable[vertex1][vertex2].edgecurvature
+            edgeLength = edgetable[vertex1][vertex2].edgelength
+        partial = -2*lijStarOverlij/self.totalEdgeLength
+        partial = partial + edgeCurvature/(4*self.totalEdgeLength)
+        partial = partial - self.LEHR*edgeLength/(4*self.totalEdgeLength)
+        partial = partial - self.vertexCurvatureList[vertex2-1]*self.sumOfEdgesAtVertexList[vertex1-1]/(2*self.totalEdgeLength**2)
+        partial = partial + self.sumOfEdgesAtVertexList[vertex1-1]*self.LEHR*self.sumOfEdgesAtVertexList[vertex2-1]/(2*self.totalEdgeLength**2)
+        partial = partial - self.sumOfEdgesAtVertexList[vertex2-1]*self.vertexCurvatureList[vertex1-1]/(2*self.totalEdgeLength**2)
+        return partial
+
+    def hessianSame(self,edgeStarOverEdgeTotal,vertex):
+        partial = 2*edgeStarOverEdgeTotal[vertex-1]/self.totalEdgeLength
+        partial = partial + self.vertexCurvatureList[vertex-1]/(2*self.totalEdgeLength)
+        partial = partial - self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]/(4*self.totalEdgeLength)
+        partial = partial - self.sumOfEdgesAtVertexList[vertex-1]*self.vertexCurvatureList[vertex-1]/(self.totalEdgeLength**2)
+        partial = partial + self.LEHR*self.sumOfEdgesAtVertexList[vertex-1]**2/(2*self.totalEdgeLength**2)
+        return partial
+
+    def getEdgeStarOverEdgeSums(self,tableOfEdges,numberOfVertices):
+            edgeSumsStar = []
+            for i in range(1,numberOfVertices+1):
+                sums = 0
+                for j in range(1,numberOfVertices+1):
+                    if tableOfEdges[i][j] != 0:
+                        sums = sums + tableOfEdges[i][j].edgelengthStar/tableOfEdges[i][j].edgelength
+                        #print(str(i)+","+str(j)+": "+str(tableOfEdges[i][j].edgelengthStar))
+                    elif tableOfEdges[j][i] != 0:
+                        sums = sums + tableOfEdges[j][i].edgelengthStar/tableOfEdges[j][i].edgelength
+                        #print(str(j)+","+str(i)+": "+str(tableOfEdges[j][i].edgelengthStar))
+                edgeSumsStar.append(sums)
+            return edgeSumsStar
+
+    def makePosDef(self,target,add = 1):
+        eigns = numpy.linalg.eigvals((target))
+        smallEig = min(eigns)
+        if(smallEig <= 0):
+            target = target + (math.fabs(smallEig)+add)*numpy.identity(target.size**.5)
+        eigns2=numpy.linalg.eigvals(target)
+        return target
+
+    #true if there exists an illegal tetrahedron
+    def advancedCheckLegalTetrahedra(self,listOfTetrahedra,tableOfEdges):
+            #legal = True
+            everIllegal = False
+            for i in range(len(listOfTetrahedra)):
+                legal = listOfTetrahedra[i].checkLegalTetrahedron(tableOfEdges)
+                if legal == False:
+                    #print('Illegal Tetrahedron: (',listOfTetrahedra[i].vertex1,',',listOfTetrahedra[i].vertex2,',',listOfTetrahedra[i].vertex3,',',listOfTetrahedra[i].vertex4,')')
+                    everIllegal = True
+                    break  #comment this out if print commands are used
+            return everIllegal
 
 
     def checkLCSC(self,tableOfEdges,edgeList,error=.0001):
@@ -699,14 +817,16 @@ class metric:
         return vertexCurvature
 
     def setEdgeLengths(self,convar):
+        self.totalEdgeLength = 0
+        self.sumOfEdgesAtVertexList = [0]*self.background.vertexNumber
         edgeLengthTable = copy.deepcopy(self.background.edgetable)
         for i in range(len(edgeLengthTable)):
             for j in range(len(edgeLengthTable[i])):
                 if(edgeLengthTable[i][j]!=0):
                     edgeLengthTable[i][j].edgelength = math.exp(.5*(convar[i-1]+convar[j-1]))*edgeLengthTable[i][j].edgelength
-                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength/2
-                    self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+edgeLengthTable[i][j].edgelength/2
-                    self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength/2
+                    self.totalEdgeLength = self.totalEdgeLength + edgeLengthTable[i][j].edgelength
+                    self.sumOfEdgesAtVertexList[i-1] = self.sumOfEdgesAtVertexList[i-1]+edgeLengthTable[i][j].edgelength
+                    self.sumOfEdgesAtVertexList[j-1] = self.sumOfEdgesAtVertexList[j-1]+edgeLengthTable[i][j].edgelength
         return edgeLengthTable
 
     def getFaceInfo(self,edgeTable,tetrahedraLIst):
@@ -859,11 +979,11 @@ def modifyBackground(cList,base,filename):
 def main(x):
     storage = str(0)+".txt"
     LEHRList = []
-    numberVertices=4
-    #cList = [.1,0,0,0,0]
+    numberVertices=5
+    cList = [0.1918320709620588, 0.07884110555232882, 0.3333694828702125, 0.015878413208659015, 0.1488089712969456]
     #cList = [2*math.log(math.sqrt(3)/2),0,0,0,0]
     # cList = [2*math.log(1.1),0,0,0,0]
-    conformalVariations = [0,0,0,0, x]
+    conformalVariations = [0.078597226046157861, 0.031660445927038358, -0.017535880497176578, -0.066058169629913427, -0.12623378657442391]
     #conformalVariations = [0.0098725102281612669, -0.024804299660461947, -0.038808096379086658, 0.00024891785985072011, 0.04307501631120822, 0.003014329809748733]
     #cList = [-0.3491473123359483, -0.08502450488525115, -0.394170749003528, 0.1316734376555171, -0.47460353336503747, 0.44007075278156027, 0.39875525872830064, 0.1871459259803374, -0.38092127371776663]
     #seed=4741252
@@ -871,12 +991,12 @@ def main(x):
     seed=56932684
     random.seed(seed)
     #seed=9865721
-    triangulation='manifoldExample3.txt'
+    triangulation='manifoldExample4.txt'
     backgroundfile='backgroundMetric.txt'
     faceInfo = " "
     print("Hello World!\n")
     base = BasisBuilder.main(triangulation)
-    #modifyBackground(cList,base,backgroundfile)
+    modifyBackground(cList,base,backgroundfile)
     exploreMetric = metric(backgroundfile,triangulation,conformalVariations)
     exploreMetric.calLEHR(conformalVariations)
     exploreMetric.advancedPrint(conformalVariations)
